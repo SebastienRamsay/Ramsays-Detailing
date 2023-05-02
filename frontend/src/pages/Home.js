@@ -1,6 +1,7 @@
 import { useEffect } from "react"
 import { useWorkoutsContext } from "../hooks/useWorkoutsContext"
 import { useAuthContext } from "../hooks/useAuthContext"
+import { useLogout } from '../hooks/useLogout'
 
 // components
 import WorkoutDetails from "../components/WorkoutDetails"
@@ -9,6 +10,7 @@ import WorkoutForm from "../components/WorkoutForm"
 const Home = () => {
   const { workouts, dispatch } = useWorkoutsContext()
   const { user } = useAuthContext()
+  const { logout } = useLogout()
 
   useEffect(() => {
     
@@ -22,6 +24,9 @@ const Home = () => {
 
       if (response.ok) {
         dispatch({type: 'SET_WORKOUTS', payload: json})
+      } else if (response.status === 401 && json.error === 'jwt expired') {
+        logout()
+        window.location.reload()
       }
     }
 
@@ -29,7 +34,7 @@ const Home = () => {
       fetchWorkouts()
     }
     
-  }, [dispatch, user])
+  }, [dispatch, user, logout])
 
   return (
     <div className="home">

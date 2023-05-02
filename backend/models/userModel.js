@@ -12,7 +12,8 @@ const userSchema = new Schema({
     password: {
         type: String,
         required: true
-    }
+    },
+    refreshRoken: [String]
 }, { timestamps: true })
 
 //static login method

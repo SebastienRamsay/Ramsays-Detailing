@@ -1,16 +1,11 @@
 import { Link } from 'react-router-dom'
-import { useLogout } from '../hooks/useLogout'
-import { useAuthContext } from '../hooks/useAuthContext'
+import LogOutBtn from './LogOutBtn'
+import { useContext } from 'react'
+import AuthContext from '../context/AuthContext'
 
 const Navbar = () => {
 
-  const { logout } = useLogout()
-  const { user } = useAuthContext()
-
-  const callLogout = () => {
-    logout()
-  }
-
+  const { loggedIn } = useContext(AuthContext)
 
   return (
     <header>
@@ -19,16 +14,14 @@ const Navbar = () => {
           <h1>Workout Buddy</h1>
         </Link>
         <nav>
-          {user && (
+          {loggedIn && (
           <div>
-            <span>{user.email}</span>
-            <button onClick={callLogout}>Logout</button>
+            <LogOutBtn/>
           </div>
           )}
-          {!user && (
+          {!loggedIn && (
           <div>
             <Link to="/login">Login</Link>
-            <Link to="/signup">Signup</Link>
           </div>
           )}
         </nav>

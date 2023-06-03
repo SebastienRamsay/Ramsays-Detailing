@@ -1,17 +1,20 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { useAuthContext } from './hooks/useAuthContext'
+import axios from "axios"
 
 // pages & components
 import Home from './pages/Home'
 import Login from './pages/Login'
-import Signup from './pages/Signup'
 import Services from './pages/Services'
 import Service from './pages/Service'
 import Navbar from './components/Navbar'
+import AuthContext from './context/AuthContext'
+import { useContext } from 'react'
+
+axios.defaults.withCredentials = true
 
 function App() {
 
-  const { user } = useAuthContext()
+  const { loggedIn } = useContext(AuthContext)
 
   return (
     <div className="App">
@@ -21,23 +24,19 @@ function App() {
           <Routes>
             <Route 
               path="/" 
-              element={user ? <Home /> : <Navigate to="/login"/>} 
+              element={loggedIn ? <Home /> : <Navigate to="/login"/>} 
             />
             <Route 
               path="/login"
-              element={!user ? <Login /> : <Navigate to="/"/>} 
-            />
-            <Route 
-              path="/signup"
-              element={!user ? <Signup /> : <Navigate to="/"/>} 
+              element={!loggedIn ? <Login /> : <Navigate to="/"/>} 
             />
             <Route 
               path="/services"
-              element={!user ? <Login /> : <Services to="/"/>} 
+              element={!loggedIn ? <Login /> : <Services/>} 
             />
             <Route 
               path="/service/:serviceName"
-              element={!user ? <Login /> : <Service to="/"/>} 
+              element={!loggedIn ? <Login /> : <Service/>} 
             />
           </Routes>
         </div>

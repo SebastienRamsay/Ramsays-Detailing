@@ -1,4 +1,4 @@
-const imageDirectory = './images/';
+const imageDirectory = 'http://localhost:4000/images/';
 
 const ServiceDetails = ({ service }) => {
     const imagePath = imageDirectory + service.localImageName
@@ -6,7 +6,6 @@ const ServiceDetails = ({ service }) => {
       <div className="service-details">
         <img src={imagePath} alt=""></img>
         <h4>{service.title}</h4>
-        <p><strong>Price: </strong>{service.price}</p>
       </div>
     );
 }

@@ -1,34 +1,28 @@
-import { createContext, useReducer } from 'react'
+import React, { createContext, useEffect, useState } from "react"
 
-export const ServicesContext = createContext()
+const ServicesContext = createContext()
 
-export const servicesReducer = (state, action) => {
-  switch (action.type) {
-    case 'SET_SERVICES':
-      return { 
-        services: action.payload 
-      }
-    case 'CREATE_SERVICE':
-      return { 
-        services: [action.payload, ...state.services] 
-      }
-    case 'DELETE_SERVICE':
-      return { 
-        services: state.services.filter(w => w._id !== action.payload._id) 
-      }
-    default:
-      return state
+function ServicesContextProvider(props){
+  const [services, setServices] = useState(undefined)
+
+  async function getServices() { 
+    const response = await fetch('http://localhost:4000/api/services', {
+      method: 'GET',
+      credentials: 'include'
+    })
+    var json = await response.json()
+    setServices(json)
   }
+
+  useEffect(() => {
+    getServices()
+  }, [])
+
+  return <ServicesContext.Provider value={{services, getServices}}>
+    {props.children}
+  </ServicesContext.Provider>
 }
 
-export const ServicesContextProvider = ({ children }) => {
-  const [state, dispatch] = useReducer(servicesReducer, { 
-    services: null
-  })
-  
-  return (
-    <ServicesContext.Provider value={{ ...state, dispatch }}>
-      { children }
-    </ServicesContext.Provider>
-  )
-}
+export default ServicesContext
+
+export { ServicesContextProvider }

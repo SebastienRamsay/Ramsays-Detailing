@@ -1,33 +1,29 @@
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 
 import ServiceDetails from "../components/ServiceDetails"
 import { Link } from "react-router-dom"
-import { useServicesContext } from "../hooks/useServicesContext"
+
 
 const Services = () => {
 
-    const { services, dispatch } = useServicesContext()
+    const [ services, setServices ] = useState(null)
     
 
     useEffect(() => {
-
         const fetchServices = async () => {
-            const response = await fetch('/api/services')
+            const response = await fetch('http://localhost:4000/api/services', {
+                method: 'GET',
+                credentials: 'include'
+            })
             const json = await response.json()
+
             if (response.ok){
-                dispatch({type: 'SET_SERVICES', payload: json})
+                setServices(json)
             }
         }
 
         fetchServices()
-    }, [dispatch]) // add an empty dependency array to run the effect only once on mount
-    if (!services){
-        return (
-            <div className="services">
-                <h4>Loading...</h4>
-            </div>
-        )
-    }
+    }, []) // add an empty dependency array to run the effect only once on mount
     return (
         <div className="services">
             {services && services.map(service => (

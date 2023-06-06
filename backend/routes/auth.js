@@ -5,7 +5,9 @@ const localStorage = new LocalStorage('./scratch')
 require('../passport')
 const jwt = require('jsonwebtoken')
 const User = require('../models/userModel')
-const { CreateCalendarEvent } = require('../controllers/googleCalenderAPI')
+const { google } = require('googleapis')
+
+
 
 function isLoggedIn(req, res, next) {
   req.user ? next() : res.sendStatus(401);
@@ -57,7 +59,60 @@ router.post('/Calendar', async function(req, res) {
       return res.send(false)
     }
 
-    CreateCalendarEvent({encodedUserId: userID, summary, location, description, startTime, endTime })
+    const decodedUserID = jwt.verify(userID, process.env.SECRET)
+
+    const user = await User.findOne({decodedUserID})
+
+    const decodedUser = jwt.verify(user.clientCodes, process.env.SECRET)
+
+    const refreshToken = decodedUser.refreshToken
+
+    oauth2Client = new google.auth.OAuth2(
+      process.env.GOOGLE_CLIENT_ID,
+      process.env.GOOGLE_CLIENT_SECRET,
+      'http://localhost:3000'
+    );
+
+    oauth2Client.setCredentials({refresh_token: refreshToken})
+    const calendar = google.calendar({ version: 'v3'});
+
+    // Get the current date
+    const currentDate = new Date();
+
+    // Set the date for tomorrow
+    const tomorrow = new Date(currentDate);
+    tomorrow.setDate(currentDate.getDate() + 1);
+
+    const event = {
+      summary: 'Sample Event',
+      location: 'Sample Location',
+      description: 'This is a sample event created using the Google Calendar API.',
+      start: {
+        dateTime: currentDate.toISOString(),
+        timeZone: 'America/New_York', // Eastern Standard Time (EST)
+      },
+      end: {
+        dateTime: tomorrow.toISOString(),
+        timeZone: 'America/New_York', // Eastern Standard Time (EST)
+      },
+      attendees: [
+        { email: 'attendee1@example.com' },
+        { email: 'attendee2@example.com' },
+      ],
+    };
+
+    try {
+      const response = await calendar.events.insert({
+        auth: oauth2Client,
+        calendarId: 'primary', // Use 'primary' for the authenticated user's primary calendar
+        resource: event,
+      });
+
+      console.log('Event created:', response.data);
+    } catch (error) {
+      console.error('Error creating event:', error);
+    }
+    //CreateCalendarEvent({ oauth2Client, summary, location, description, startTime, endTime })
     
   }catch(error){
 

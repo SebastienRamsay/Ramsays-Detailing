@@ -25,7 +25,7 @@ const Services = () => {
         fetchServices()
     }, []) // add an empty dependency array to run the effect only once on mount
     return (
-        <div className="services">
+        <div class="flex justify-center gap-10">
             {services && services.map(service => (
                 <Link to={`/service/${service.title.replace(/\s+/g, '')}`} key={service._id}>
                     <ServiceDetails service={service}/>

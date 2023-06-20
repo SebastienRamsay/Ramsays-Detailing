@@ -13,7 +13,7 @@ const getServices = async (req, res) => {
 }
 
 const createService = async (req, res) => {
-    const { localImageName, title, price, questions } = req.body
+    const { localImageName, title, description, price, questions } = req.body
     const questionSchemaArray = []
 
     const imageDirectory = './images/';
@@ -38,6 +38,7 @@ const createService = async (req, res) => {
         const service = await Service.create({
             localImageName,
             title,
+            description,
             price,
             questions: questionSchemaArray
         })

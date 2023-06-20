@@ -32,6 +32,10 @@ const serviceSchema = new Schema({
         required: true,
         unique: true
     },
+    description: {
+        type: String,
+        required: true,
+    },
     questions: {
         type: [questionSchema],
         required: false

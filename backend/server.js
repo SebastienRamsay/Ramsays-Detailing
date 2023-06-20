@@ -12,6 +12,7 @@ const workoutRoutes = require('./routes/workouts')
 const usersRoutes = require('./routes/users')
 const serviceRoutes = require('./routes/service')
 const detialingRoutes = require('./routes/detailing')
+const cartRoutes = require('./routes/cart')
 const authRoute = require('./routes/auth')
 const googlePlacesAPI = require('./routes/googlePlacesAPI')
 const session = require('express-session');
@@ -60,6 +61,7 @@ app.use('/api/workouts', workoutRoutes)
 app.use('/api/user', usersRoutes)
 app.use('/api/services', serviceRoutes)
 app.use('/api/detailings', detialingRoutes)
+app.use('/api/cart', cartRoutes)
 app.use(googlePlacesAPI)
 
 // connect to db

@@ -116,7 +116,7 @@ router.post('/Calendar', async function(req, res) {
     
   }catch(error){
 
-    console.log("/LoggedIn: ", error)
+    console.log("/Calendar: ", error)
 
     res.redirect('http://localhost:4000/logout')
   }

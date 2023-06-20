@@ -13,7 +13,7 @@ function LogOutBtn() {
         getLoggedIn()
     }
 
-    return <button onClick={logout}>Logout</button>
+    return <button onClick={logout}>Log Out</button>
 }
 
 export default LogOutBtn

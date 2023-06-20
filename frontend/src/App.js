@@ -4,9 +4,11 @@ import axios from "axios"
 // pages & components
 import Home from './pages/Home'
 import Login from './pages/Login'
+import Cart from './pages/Cart'
 import Services from './pages/Services'
 import Service from './pages/Service'
 import Navbar from './components/Navbar'
+import Footer from './components/Footer'
 import AuthContext from './context/AuthContext'
 import { useContext } from 'react'
 
@@ -17,10 +19,10 @@ function App() {
   const { loggedIn } = useContext(AuthContext)
 
   return (
-    <div className="App">
+      <div class="app">
       <BrowserRouter>
         <Navbar />
-        <div className="pages">
+        <div class="pages">
           <Routes>
             <Route 
               path="/" 
@@ -38,10 +40,16 @@ function App() {
               path="/service/:serviceName"
               element={!loggedIn ? <Login /> : <Service/>} 
             />
+            <Route
+              path='/cart'
+              element={!loggedIn ? <Login /> : <Cart/>}
+            />
           </Routes>
         </div>
+        <Footer/>
       </BrowserRouter>
     </div>
+    
   );
 }
 

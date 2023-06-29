@@ -33,7 +33,7 @@ router.get('/LoggedIn', async function(req, res) {
 
     if (refreshToken.exp < now) {
       console.log('Refresh token has expired')
-      res.redirect('http://localhost:4000/logout')
+      res.redirect(process.env.ORIGIN + '/logout')
     }
 
     console.log('user is logged in')
@@ -43,7 +43,7 @@ router.get('/LoggedIn', async function(req, res) {
 
     console.log("/LoggedIn: ", error)
 
-    res.redirect('http://localhost:4000/logout')
+    res.redirect(process.env.ORIGIN + '/logout')
   }
   
   
@@ -70,7 +70,7 @@ router.post('/Calendar', async function(req, res) {
     oauth2Client = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,
       process.env.GOOGLE_CLIENT_SECRET,
-      'http://localhost:3000'
+      process.env.ORIGIN
     );
 
     oauth2Client.setCredentials({refresh_token: refreshToken})
@@ -118,7 +118,7 @@ router.post('/Calendar', async function(req, res) {
 
     console.log("/Calendar: ", error)
 
-    res.redirect('http://localhost:4000/logout')
+    res.redirect(process.env.ORIGIN + '/logout')
   }
 
   
@@ -144,7 +144,7 @@ router.get('/protected', isLoggedIn, async function(req, res) {
     httpOnly: true
   })
 
-  res.redirect('http://localhost:3000/services')
+  res.redirect(process.env.ORIGIN + '/services')
 });
 
 router.get('/logout', (req, res) => {

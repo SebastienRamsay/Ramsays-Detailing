@@ -15,7 +15,7 @@ const Services = () => {
 
     useEffect(() => {
         const fetchServices = async () => {
-            const response = await fetch('http://localhost:4000/api/cart', {
+            const response = await fetch(process.env.BACKEND + '/api/cart', {
                 method: 'GET',
                 credentials: 'include'
             })
@@ -32,7 +32,7 @@ const Services = () => {
 
     async function createCalendarEvent() {
         try {
-          const response = await fetch('http://localhost:4000/Calendar', {
+          const response = await fetch(process.env.BACKEND + '/Calendar', {
             method: 'POST',
             credentials: 'include', // Include cookies in the request
             headers: {
@@ -70,7 +70,7 @@ const Services = () => {
         }
       
         try {
-          const response = await fetch(`http://localhost:4000/places/autocomplete?input=${encodeURIComponent(inputAddress)}`);
+          const response = await fetch(process.env.BACKEND + `/places/autocomplete?input=${encodeURIComponent(inputAddress)}`);
       
           if (response.status === 200) {
             try {
@@ -107,7 +107,7 @@ const Services = () => {
 
     // async function confirmAddressExists(address) {
     //   try {
-    //     const response = await fetch(`http://localhost:4000/confirm-address?address=${encodeURIComponent(address)}`);
+    //     const response = await fetch(process.env.BACKEND + `/confirm-address?address=${encodeURIComponent(address)}`);
     //     const data = await response.json();
     
     //     if (data.valid) {
@@ -156,7 +156,7 @@ const Services = () => {
 
     async function removeFromCart(_id){
         try{
-            const response = await fetch('http://localhost:4000/api/cart', {
+            const response = await fetch(process.env.BACKEND + '/api/cart', {
                 method: 'DELETE',
                 credentials: 'include', // Include cookies in the request
                 headers: {

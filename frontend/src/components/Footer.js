@@ -9,13 +9,13 @@ const Footer = () => {
             <p>7536 Dwyer Hill Road, Burritts Rapids</p>
             <div class="pt-3 flex gap-4 items-center">
                 <a href="https://www.instagram.com/ramsays_detailing/" target="_blank" rel="noreferrer">
-                    <img src="http://localhost:4000/images/instagram.png" alt="instagram" class="max-h-6" />
+                    <img src= {process.env.BACKEND + "/images/instagram.png"} alt="instagram" class="max-h-6" />
                 </a>
                 <a href="https://www.facebook.com/ramsaydetailing" target="_blank" rel="noreferrer">
-                    <img src="http://localhost:4000/images/facebook.png" alt="facebook" class="max-h-10" />
+                    <img src= {process.env.BACKEND + "/images/facebook.png"} alt="facebook" class="max-h-10" />
                 </a>
                 <a href="tel:+16137692098">
-                    <img src="http://localhost:4000/images/phone.png" alt="phone" class="max-h-6" />
+                    <img src= {process.env.BACKEND + "/images/phone.png"} alt="phone" class="max-h-6" />
                 </a>
             </div>
 

@@ -6,7 +6,7 @@ function LogOutBtn() {
     const { getLoggedIn } = useContext(AuthContext)
 
     async function logout() {
-        await fetch('http://localhost:4000/logout', {
+        await fetch(process.env.BACKEND + '/logout', {
             method: 'GET',
             credentials: 'include'
         })

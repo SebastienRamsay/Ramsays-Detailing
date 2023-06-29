@@ -1,4 +1,4 @@
-const imageDirectory = 'http://localhost:4000/images/';
+const imageDirectory = process.env.BACKEND + '/images/';
 
 const ServiceDetails = ({ service }) => {
     const imagePath = imageDirectory + service.localImageName

@@ -34,7 +34,7 @@ const Login = () =>{
                 {/* {error && <div className="error">{error}</div>} */}
             </form>
             <p class="p-5 font-bold text-xl">or</p>
-            <Link to="http://localhost:4000/auth/google">
+            <Link to={process.env.BACKEND + '/auth/google'}>
                 <button onClick={() => setGuest(false)} class="bg-blue-600 flex items-center">
                     <img src="img/google.png"alt="google" class="h-auto w-10 p-1"/>
                     <span class="mx-2 text-gray-50">Sign in with Google</span>

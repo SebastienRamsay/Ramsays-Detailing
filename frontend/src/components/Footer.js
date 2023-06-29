@@ -7,14 +7,20 @@ const Footer = () => {
             <p class="">sebastien.ramsay@gmail.com</p>
             <p>613-769-2098</p>
             <p>7536 Dwyer Hill Road, Burritts Rapids</p>
-            <div class="flex pt-3">
-                <a href="https://www.facebook.com/profile.php?id=100082832307436" class="mr-4">
-                    <img src="img/Facebook.png" alt="facebook" class="w-7 h-auto"/>
+            <div class="pt-3 flex gap-4 items-center">
+                <a href="https://www.instagram.com/ramsays_detailing/" target="_blank" rel="noreferrer">
+                    <img src="http://localhost:4000/images/instagram.png" alt="instagram" class="max-h-6" />
                 </a>
-                <a href="https://www.instagram.com/ramsays_detailing/">
-                    <img src="img/Instagram.png" alt="instagram" class="w-7 h-auto"/>
+                <a href="https://www.facebook.com/ramsaydetailing" target="_blank" rel="noreferrer">
+                    <img src="http://localhost:4000/images/facebook.png" alt="facebook" class="max-h-10" />
+                </a>
+                <a href="tel:+16137692098">
+                    <img src="http://localhost:4000/images/phone.png" alt="phone" class="max-h-6" />
                 </a>
             </div>
+
+
+
             
         </div>
     )

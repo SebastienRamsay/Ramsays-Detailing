@@ -23,7 +23,6 @@ const Services = () => {
 
             if (response.ok){
                 setCart(json)
-                console.log("CART: ", json)
             }
         }
 
@@ -155,52 +154,94 @@ const Services = () => {
     );
   };
 
+    async function removeFromCart(_id){
+        try{
+            const response = await fetch('http://localhost:4000/api/cart', {
+                method: 'DELETE',
+                credentials: 'include', // Include cookies in the request
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ "_id": _id })
+            });
+
+            if (response.ok){
+                setCart((prevCart) => {
+                    const serviceToRemove = prevCart.services.find(
+                      (service) => service._id === _id
+                    );
+                    const updatedServices = prevCart.services.filter(
+                      (service) => service._id !== _id
+                    );
+                    const updatedPrice = prevCart.price - serviceToRemove.servicePrice;
+                    
+                    return { ...prevCart, services: updatedServices, price: updatedPrice };
+                  });
+                  
+            }else{
+                
+            }
+        }catch(error){
+            console.log(error)
+        }
+        
+    }
 
 
-    if (cart){
-        return (
-            <div class="flex justify-center gap-10">
-                <h1>{cart.price}</h1>
-                {cart.services && cart.services.map(service => (
-                    <div key={service._id}>
-                        <h1>{service.serviceName}</h1>
-                        <h1>{service.servicePrice}</h1>
-                        {service.answeredQuestions && service.answeredQuestions.map(answeredQuestion => (
-                            <div key={answeredQuestion._id}>
-                                <h1>{answeredQuestion.question}</h1>
-                                <h1>{answeredQuestion.answer}</h1>
-                            </div>
-                        ))}
-                    </div>
-                ))}
-                <DateTimePicker />
-
-                <div className="address-input-container">
-                <input
-                    type="text"
-                    placeholder="Enter address"
-                    value={address || ''}
-                    onChange={handleAddressChange}
-                    onKeyUp={handleAddressSuggestions}
-                />
-                {addressSuggestions.length > 0 && (
-                    <div className="suggestions-dropdown">
-                    {addressSuggestions.map((suggestion) => (
-                        <div
-                        key={suggestion}
-                        className="suggestion-item"
-                        onClick={() => handleSuggestionClick(suggestion)}
-                        >
-                        {suggestion}
+    try{
+        if (cart.services.length > 0){
+            return (
+                <div class="flex justify-center gap-10">
+                    <h1>{cart.price}</h1>
+                    {cart.services && cart.services.map(service => (
+                        <div key={service._id}>
+                            <h1>{service.serviceName}</h1>
+                            <h1>{service.servicePrice}</h1>
+                            {service.answeredQuestions && service.answeredQuestions.map(answeredQuestion => (
+                                <div key={answeredQuestion._id}>
+                                    <h1>{answeredQuestion.question}</h1>
+                                    <h1>{answeredQuestion.answer}</h1>
+                                </div>
+                            ))}
+                            <button onClick={() => removeFromCart(service._id)}>Remove</button>
                         </div>
                     ))}
+                    <DateTimePicker />
+    
+                    <div className="address-input-container">
+                    <input
+                        type="text"
+                        placeholder="Enter address"
+                        value={address || ''}
+                        onChange={handleAddressChange}
+                        onKeyUp={handleAddressSuggestions}
+                    />
+                    {addressSuggestions.length > 0 && (
+                        <div className="suggestions-dropdown">
+                        {addressSuggestions.map((suggestion) => (
+                            <div
+                            key={suggestion}
+                            className="suggestion-item"
+                            onClick={() => handleSuggestionClick(suggestion)}
+                            >
+                            {suggestion}
+                            </div>
+                        ))}
+                        </div>
+                    )}
                     </div>
-                )}
+                    <button class="button" onClick={createCalendarEvent}>Book Detailing</button>
                 </div>
-                <button onClick={createCalendarEvent}>Book Detailing</button>
-            </div>
-        )  
+            )  
+        }
+    }catch(error){
+        
     }
     
+    return (
+            <div class="flex justify-center gap-10">
+                <h1>Your cart is empty...</h1>
+            </div>
+        )
 }
 export default Services

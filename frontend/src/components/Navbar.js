@@ -5,42 +5,56 @@ import AuthContext from '../context/AuthContext'
 
 const Navbar = () => {
 
-  const { loggedIn } = useContext(AuthContext)
+  const { loggedIn, getCartLength, cartLength } = useContext(AuthContext)
   const location = useLocation()
-  const isLoginPage = location.pathname === '/login';
+  const isCartPage = location.pathname === '/cart';
+  getCartLength()
 
   return (
     <header class="text-white">
       <div class="bg-primary-0 pt-5 pl-10 pr-20 pb-2">
-        <Link to="/" class="flex-col">
-          <img class="h-auto w-64" src="img/LOGO.png" alt="logo"/>
+        <Link to="/" class="inline-block text-center">
+          <img class="h-auto w-64" src="http://localhost:4000/images/LOGO.png" alt="logo"/>
           <h1 class="title">Ramsay's Detailing</h1>
         </Link>
         <nav class="">
           {loggedIn && (
           <div>
             <div class="flex justify-center font-semibold">
-              <a href='http://localhost:3000'>
+              <Link to="/">
                 <button class="hover:font-bold">Home</button>
-              </a>
-              <a href='http://localhost:3000/services'>
+              </Link>
+              <Link to='/services'>
                 <button class="hover:font-bold ml-10">Services</button>
-              </a>
-              <a href='http://localhost:3000/about'>
+              </Link>
+              <Link to='/about'>
                 <button class="ml-10 hover:font-bold">About</button>
-              </a>
+              </Link>
             </div>
-            <div class="absolute end-0 right-16 top-11 bg-red-700 button">
-              <LogOutBtn/>
-            </div>   
-            <div>
-              <Link to="/cart">Cart</Link>
-            </div>
-          </div>
-          )}
-          {!loggedIn && !isLoginPage && (
-          <div class="absolute end-0 right-16 top-11 bg-green-700 button">
-            <Link to="/login">Login</Link>
+            <span class="flex">
+              <div class="absolute end-0 right-16 top-11 bg-red-700 button">
+                <LogOutBtn/>
+              </div> 
+              {!isCartPage && (
+                <div>
+                  <Link to="/cart" class="absolute right-40 top-9 flex flex-col items-center">
+                    <h1 class="absolute ml-1"><b>{cartLength}</b></h1>
+                    <img alt="cart" src='http://localhost:4000/images/cart.png' class="max-h-11"/>
+                  </Link>
+                  <a href='https://www.instagram.com/ramsays_detailing/' target="_blank" rel="noreferrer" class="absolute right-56 top-12 mr-2">
+                    <img src="http://localhost:4000/images/instagram.png" alt="instagram" class="max-h-6"/>
+                  </a>
+                  <a href='https://www.facebook.com/ramsaydetailing' target="_blank" rel="noreferrer" class="absolute right-64 top-10 mr-2">
+                    <img src="http://localhost:4000/images/facebook.png" alt="facebook" class="max-h-10"/>
+                  </a>
+                  <a href="tel:+16137692098" class="absolute right-72 top-12 mr-6">
+                    <img src="http://localhost:4000/images/phone.png" alt="phone" class="max-h-6"/>
+                  </a>
+                </div>
+              )}  
+              
+            </span>
+            
           </div>
           )}
         </nav>

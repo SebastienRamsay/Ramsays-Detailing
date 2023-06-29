@@ -3,7 +3,7 @@ const imageDirectory = 'http://localhost:4000/images/';
 const ServiceDetails = ({ service }) => {
     const imagePath = imageDirectory + service.localImageName
     return (
-        <div class="card">
+        <div class="bg-primary-0 rounded overflow-hidden shadow-md m-5 flex-col max-w-md mx-auto">
           <img src={imagePath} alt=""/>
           <h4 class="font-bold text-lg flex justify-center">{service.title}</h4>
         </div>

@@ -54,7 +54,7 @@ cartSchema.statics.addToCart = async function (user_id, service) {
         price: service.price,
         services: [
           {
-            serviceName: service.title,
+            serviceName: service.serviceName,
             servicePrice: service.price,
             answeredQuestions: service.answeredQuestions,
           },
@@ -63,7 +63,7 @@ cartSchema.statics.addToCart = async function (user_id, service) {
     } else {
       cart.price += service.price;
       cart.services.push({
-        serviceName: service.title,
+        serviceName: service.serviceName,
         servicePrice: service.price,
         answeredQuestions: service.answeredQuestions,
       });
@@ -76,7 +76,7 @@ cartSchema.statics.addToCart = async function (user_id, service) {
   }
 };
 
-cartSchema.statics.removeFromCart = async function (user_id, service) {
+cartSchema.statics.removeFromCart = async function (user_id, service_id) {
   try {
     const cart = await this.findOne({ user_id });
 
@@ -84,21 +84,20 @@ cartSchema.statics.removeFromCart = async function (user_id, service) {
       throw new Error('No active cart found');
     }
 
-    const serviceIndex = cart.services.findIndex(
-      (s) => s.serviceName === service.title
-    );
-    if (serviceIndex === -1) {
+    const service = cart.services.find((s) => s._id.toString() === service_id);
+    if (!service) {
       throw new Error('Service not found in cart');
     }
 
-    cart.price -= service.price;
-    cart.services.splice(serviceIndex, 1);
+    cart.price -= service.servicePrice;
+    cart.services = cart.services.filter((s) => s._id.toString() !== service_id);
 
     await cart.save();
     return cart;
   } catch (error) {
-    throw new Error('Failed to remove item from cart');
+    throw new Error(error);
   }
 };
+
 
 module.exports = mongoose.model('Cart', cartSchema);

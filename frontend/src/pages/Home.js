@@ -1,49 +1,31 @@
 import { useEffect } from "react"
-import { useWorkoutsContext } from "../hooks/useWorkoutsContext"
-import { useAuthContext } from "../hooks/useAuthContext"
-import { useLogout } from '../hooks/useLogout'
-
-// components
-import WorkoutDetails from "../components/WorkoutDetails"
-import WorkoutForm from "../components/WorkoutForm"
+import { Link } from 'react-router-dom'
 
 const Home = () => {
-  const { workouts, dispatch } = useWorkoutsContext()
-  const { user } = useAuthContext()
-  const { logout } = useLogout()
 
   useEffect(() => {
     
-    const fetchWorkouts = async () => {
-      
-      const response = await fetch('/api/workouts', {
-        headers: {
-        'Authorization': `Bearer ${user.token}`}
-      })
-      const json = await response.json()
-
-      if (response.ok) {
-        dispatch({type: 'SET_WORKOUTS', payload: json})
-      } else if (response.status === 401 && json.error === 'jwt expired') {
-        logout()
-        window.location.reload()
-      }
-    }
-
-    if (user){
-      fetchWorkouts()
-    }
     
-  }, [dispatch, user, logout])
+    
+  }, [])
 
   return (
-    <div className="home">
-      <div className="workouts">
-        {workouts && workouts.map(workout => (
-          <WorkoutDetails workout={workout} key={workout._id} />
-        ))}
+    <div class="flex flex-col items-center">
+      <h1 class="text-6xl mb-8"><b>WELCOME</b></h1>
+      <p class="text-center">
+        Welcome to our <b>mobile detailing service</b>, 
+        where we offer top <b>quality services at unbeatable prices</b>.<br/> 
+        Call us anytime to get a free quote on a detailing.
+      </p>
+      <div class="mb-8">
+        <a href="tel:+16137692098" class="flex items-center">
+          <strong class="text-2xl font-sans">613-769-2098</strong>
+          <img alt="phone" src="http://localhost:4000/images/phone.png" class="max-h-6 ml-3"/>
+        </a>
       </div>
-      <WorkoutForm />
+      <Link to='/services' class="border rounded-full py-2 px-10 text-lg hover:font-bold hover:border-2">
+        Services
+      </Link>
     </div>
   )
 }

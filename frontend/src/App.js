@@ -18,6 +18,21 @@ function App() {
 
   const { loggedIn } = useContext(AuthContext)
 
+  if (loggedIn === undefined){
+    return (
+      <div class="app">
+      <BrowserRouter>
+        
+        <div class="pages">
+          
+        </div>
+        <Footer/>
+      </BrowserRouter>
+    </div>
+    
+  );
+  }
+
   return (
       <div class="app">
       <BrowserRouter>

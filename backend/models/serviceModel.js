@@ -3,24 +3,51 @@ const Schema = mongoose.Schema
 
 const answerSchema = new Schema({
     answer: {
-        type: String,
-        required: true
+      type: String,
+      required: true,
     },
     costIncrease: {
-        type: Number
-    }
-})
+      type: Number,
+      required: true,
+    },
+    additionalQuestions: {
+      type: [
+        {
+          question: {
+            type: String,
+            maxLength: 25,
+          },
+          answers: [
+            {
+              answer: {
+                type: String,
+                required: true,
+              },
+              costIncrease: {
+                type: Number,
+                required: true,
+              },
+            },
+          ],
+          required: false,
+        },
+      ],
+      default: undefined,
+      required: false,
+    },
+});
+  
 
 const questionSchema = new Schema({
     question: {
         type: String,
-        required: true
+        required: true,
+        maxLength: 25
     },
     answers: {
         type: [answerSchema]
     }
 })
-
 
 const serviceSchema = new Schema({
     localImageName: {

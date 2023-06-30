@@ -1,3 +1,4 @@
+import axios from "axios";
 import React, { createContext, useEffect, useState } from "react"
 
 const ServicesContext = createContext()
@@ -6,12 +7,12 @@ function ServicesContextProvider(props){
   const [services, setServices] = useState(undefined)
 
   async function getServices() { 
-    const response = await fetch('http://localhost:4000/api/services', {
-      method: 'GET',
-      credentials: 'include'
-    })
-    var json = await response.json()
-    setServices(json)
+    try {
+      const response = await axios.get('/api/services', { withCredentials: true });
+      setServices(response.data);
+    } catch (error) {
+      console.error('Error fetching services:', error);
+    }
   }
 
   useEffect(() => {

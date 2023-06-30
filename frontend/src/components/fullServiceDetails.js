@@ -2,9 +2,8 @@ import React, { useState, useContext } from 'react';
 import 'react-datepicker/dist/react-datepicker.css';
 import AuthContext from '../context/AuthContext'
 
-
 const FullServiceDetails = ({ service }) => {
-  const imageDirectory = process.env.BACKEND + '/images/';
+  const imageDirectory = '/images/';
   
   const imagePath = imageDirectory + service.localImageName;
   const tomorrow = new Date();
@@ -63,7 +62,7 @@ const FullServiceDetails = ({ service }) => {
     // use answer _id to track 
     try{
       if (answeredQuestions.length === service.questions.length + additionalQuestions.length){
-        const response = await fetch(process.env.BACKEND + '/api/cart/', {
+        const response = await fetch('/api/cart/', {
           method: 'POST',
           credentials: 'include', // Include cookies in the request
           headers: {

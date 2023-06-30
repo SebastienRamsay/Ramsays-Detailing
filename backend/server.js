@@ -22,6 +22,8 @@ const session = require('express-session');
 // express app
 const app = express()
 
+app.use(express.static('build'))
+
 // middleware
 app.use(
   cors({
@@ -54,6 +56,7 @@ app.use((req, res, next) => {
   next()
 })
 
+// frontend
 
 
 // routes

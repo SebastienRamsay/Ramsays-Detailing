@@ -1,4 +1,5 @@
-const imageDirectory = process.env.BACKEND + '/images/';
+
+const imageDirectory = '/images/';
 
 const ServiceDetails = ({ service }) => {
     const imagePath = imageDirectory + service.localImageName

@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react"
 import DatePicker from 'react-datepicker';
 
-
 const Services = () => {
 
     const [ cart, setCart ] = useState(null)
@@ -15,7 +14,7 @@ const Services = () => {
 
     useEffect(() => {
         const fetchServices = async () => {
-            const response = await fetch(process.env.BACKEND + '/api/cart', {
+            const response = await fetch('/api/cart', {
                 method: 'GET',
                 credentials: 'include'
             })
@@ -32,7 +31,7 @@ const Services = () => {
 
     async function createCalendarEvent() {
         try {
-          const response = await fetch(process.env.BACKEND + '/Calendar', {
+          const response = await fetch('/Calendar', {
             method: 'POST',
             credentials: 'include', // Include cookies in the request
             headers: {
@@ -70,7 +69,7 @@ const Services = () => {
         }
       
         try {
-          const response = await fetch(process.env.BACKEND + `/places/autocomplete?input=${encodeURIComponent(inputAddress)}`);
+          const response = await fetch(`/places/autocomplete?input=${encodeURIComponent(inputAddress)}`);
       
           if (response.status === 200) {
             try {
@@ -107,7 +106,7 @@ const Services = () => {
 
     // async function confirmAddressExists(address) {
     //   try {
-    //     const response = await fetch(process.env.BACKEND + `/confirm-address?address=${encodeURIComponent(address)}`);
+    //     const response = await fetch(`/confirm-address?address=${encodeURIComponent(address)}`);
     //     const data = await response.json();
     
     //     if (data.valid) {
@@ -156,7 +155,7 @@ const Services = () => {
 
     async function removeFromCart(_id){
         try{
-            const response = await fetch(process.env.BACKEND + '/api/cart', {
+            const response = await fetch('/api/cart', {
                 method: 'DELETE',
                 credentials: 'include', // Include cookies in the request
                 headers: {

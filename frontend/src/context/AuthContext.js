@@ -7,7 +7,7 @@ function AuthContextProvider(props){
   const [cartLength, setCartLength] = useState(0)
 
   async function getLoggedIn() { 
-    const loggedInRes = await fetch('http://localhost:4000/LoggedIn', {
+    const loggedInRes = await fetch('/LoggedIn', {
       method: 'GET',
       credentials: 'include'
     })
@@ -16,7 +16,7 @@ function AuthContextProvider(props){
   }
 
   async function getCartLength() { 
-    const cartResponse = await fetch('http://localhost:4000/api/cart', {
+    const cartResponse = await fetch('/api/cart', {
       method: 'GET',
       credentials: 'include'
     })

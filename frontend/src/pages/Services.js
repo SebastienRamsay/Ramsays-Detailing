@@ -11,7 +11,7 @@ const Services = () => {
 
     useEffect(() => {
         const fetchServices = async () => {
-            const response = await fetch(process.env.BACKEND + '/api/services', {
+            const response = await fetch('/api/services', {
                 method: 'GET',
                 credentials: 'include'
             })

@@ -1,21 +1,17 @@
 import { useState } from "react";
 // import { useLogin } from "../hooks/useLogin";
-import { Link } from 'react-router-dom'
 
 const Login = () =>{
     const [name, setName] = useState('')
-    const [guest, setGuest] = useState(true)
     // const {login, error, isLoading} = useLogin()
 
     const handleSubmit = async (e) => {
         e.preventDefault()
-
-        if (guest){
-
-        }else{
-            
-        }
     }
+    const handleSignInWithGoogle = () => {
+        // Redirect the user to the backend server's Google sign-in endpoint
+        window.location.href = 'http://localhost:4000/auth/google';
+    };
 
     return (
         <div class="bg-white flex flex-col items-center justify-center max-w-md mx-auto rounded-3xl pb-5 shadow-2xl">
@@ -34,12 +30,10 @@ const Login = () =>{
                 {/* {error && <div className="error">{error}</div>} */}
             </form>
             <p class="p-5 font-bold text-xl">or</p>
-            <Link to={process.env.BACKEND + '/auth/google'}>
-                <button onClick={() => setGuest(false)} class="bg-blue-600 flex items-center">
-                    <img src="img/google.png"alt="google" class="h-auto w-10 p-1"/>
+                <button onClick={handleSignInWithGoogle} class="bg-blue-600 flex items-center">
+                    <img src='/images/google.png' alt="google" class="h-auto w-10 p-1"/>
                     <span class="mx-2 text-gray-50">Sign in with Google</span>
                 </button>
-            </Link>
             <p class="pt-2">Allows Calender Use</p>
         </div>
         

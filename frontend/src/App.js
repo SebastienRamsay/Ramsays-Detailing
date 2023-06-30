@@ -13,6 +13,8 @@ import Footer from './components/Footer'
 import AuthContext from './context/AuthContext'
 import { useContext } from 'react'
 
+export const BACKEND = "https://ramsays-detailing.onrender.com"
+
 
 axios.defaults.withCredentials = true
 

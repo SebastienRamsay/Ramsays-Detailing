@@ -1,5 +1,6 @@
 import { useState } from "react";
 // import { useLogin } from "../hooks/useLogin";
+import { BACKEND } from "../App";
 
 const Login = () =>{
     const [name, setName] = useState('')
@@ -10,7 +11,7 @@ const Login = () =>{
     }
     const handleSignInWithGoogle = () => {
         // Redirect the user to the backend server's Google sign-in endpoint
-        window.location.href = 'http://localhost:4000/auth/google';
+        window.location.href = BACKEND + '/auth/google';
     };
 
     return (

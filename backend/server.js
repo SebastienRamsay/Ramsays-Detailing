@@ -22,15 +22,14 @@ const session = require('express-session');
 // express app
 const app = express()
 
-app.use(express.static('build'))
 
-// middleware
-// app.use(
-//   cors({
-//     origin: process.env.ORIGIN,
-//     credentials: true
-//   })
-// )
+middleware
+app.use(
+  cors({
+    origin: process.env.ORIGIN,
+    credentials: true
+  })
+)
 app.use(express.json())
 app.use(cookieParser())
 

@@ -23,7 +23,7 @@ const session = require('express-session');
 const app = express()
 
 
-middleware
+// middleware
 app.use(
   cors({
     origin: process.env.ORIGIN,

@@ -14,7 +14,7 @@ const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 const strategy = new GoogleStrategy({
   clientID: process.env.GOOGLE_CLIENT_ID,
   clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-  callbackURL: "http://localhost:4000/auth/google/callback",
+  callbackURL: "https://ramsays-detailing.onrender.com/auth/google/callback",
   scope: ['profile', 'https://www.googleapis.com/auth/calendar']
 },
 async function(accessToken, refreshToken, profile, done) {

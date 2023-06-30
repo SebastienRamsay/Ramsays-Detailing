@@ -24,12 +24,14 @@ const app = express()
 
 
 // middleware
-// app.use(
-//   cors({
-//     origin: process.env.ORIGIN,
-//     credentials: true
-//   })
-// )
+app.use(
+  cors({
+    origin: process.env.ORIGIN,
+    credentials: true,
+    exposedHeaders: ['Access-Control-Allow-Origin']
+  })
+);
+
 app.use(express.json())
 app.use(cookieParser())
 

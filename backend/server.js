@@ -23,10 +23,6 @@ const session = require('express-session');
 // express app
 const app = express()
 
-app.use((req, res, next) => {
-  req.headers.host = 'ramsays-detailing-frontend.onrender.com'; // Replace with your domain name
-  next();
-});
 
 
 // middleware

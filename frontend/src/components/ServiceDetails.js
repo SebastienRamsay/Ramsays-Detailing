@@ -1,5 +1,5 @@
 
-const imageDirectory = '/images/';
+const imageDirectory = 'https://ramsays-detailing.onrender.com/images/';
 
 const ServiceDetails = ({ service }) => {
     const imagePath = imageDirectory + service.localImageName

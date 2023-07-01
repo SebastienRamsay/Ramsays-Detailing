@@ -11,7 +11,7 @@ const Services = () => {
 
     useEffect(() => {
         const fetchServices = async () => {
-            const response = await fetch('/api/services', {
+            const response = await fetch('https://ramsays-detailing.onrender.com/api/services', {
                 method: 'GET',
                 credentials: 'include'
             })

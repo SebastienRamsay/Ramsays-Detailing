@@ -14,7 +14,7 @@ const Services = () => {
 
     useEffect(() => {
         const fetchServices = async () => {
-            const response = await fetch('/api/cart', {
+            const response = await fetch('https://ramsays-detailing.onrender.com/api/cart', {
                 method: 'GET',
                 credentials: 'include'
             })
@@ -31,7 +31,7 @@ const Services = () => {
 
     async function createCalendarEvent() {
         try {
-          const response = await fetch('/Calendar', {
+          const response = await fetch('https://ramsays-detailing.onrender.com/Calendar', {
             method: 'POST',
             credentials: 'include', // Include cookies in the request
             headers: {
@@ -69,7 +69,7 @@ const Services = () => {
         }
       
         try {
-          const response = await fetch(`/places/autocomplete?input=${encodeURIComponent(inputAddress)}`);
+          const response = await fetch(`https://ramsays-detailing.onrender.com/places/autocomplete?input=${encodeURIComponent(inputAddress)}`);
       
           if (response.status === 200) {
             try {
@@ -155,7 +155,7 @@ const Services = () => {
 
     async function removeFromCart(_id){
         try{
-            const response = await fetch('/api/cart', {
+            const response = await fetch('https://ramsays-detailing.onrender.com/api/cart', {
                 method: 'DELETE',
                 credentials: 'include', // Include cookies in the request
                 headers: {

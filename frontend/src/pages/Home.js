@@ -20,7 +20,7 @@ const Home = () => {
       <div class="mb-8">
         <a href="tel:+16137692098" class="flex items-center">
           <strong class="text-2xl font-sans">613-769-2098</strong>
-          <img alt="phone" src='/images/phone.png' class="max-h-6 ml-3"/>
+          <img alt="phone" src='https://ramsays-detailing.onrender.com/images/phone.png' class="max-h-6 ml-3"/>
         </a>
       </div>
       <Link to='/services' class="border rounded-full py-2 px-10 text-lg hover:font-bold hover:border-2">

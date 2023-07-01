@@ -62,7 +62,7 @@ const FullServiceDetails = ({ service }) => {
     // use answer _id to track 
     try{
       if (answeredQuestions.length === service.questions.length + additionalQuestions.length){
-        const response = await fetch('/api/cart/', {
+        const response = await fetch('https://ramsays-detailing.onrender.com/api/cart/', {
           method: 'POST',
           credentials: 'include', // Include cookies in the request
           headers: {

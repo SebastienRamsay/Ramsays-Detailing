@@ -32,7 +32,7 @@ const Login = () =>{
             </form>
             <p class="p-5 font-bold text-xl">or</p>
                 <button onClick={handleSignInWithGoogle} class="bg-blue-600 flex items-center">
-                    <img src='/images/google.png' alt="google" class="h-auto w-10 p-1"/>
+                    <img src='https://ramsays-detailing.onrender.com/images/google.png' alt="google" class="h-auto w-10 p-1"/>
                     <span class="mx-2 text-gray-50">Sign in with Google</span>
                 </button>
             <p class="pt-2">Allows Calender Use</p>

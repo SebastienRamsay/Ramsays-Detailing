@@ -10,7 +10,7 @@ const LoginOrRegister = () => {
 
     useEffect(() => {
     const fetchUsers = async () => {
-        const response = await fetch('/api/users')
+        const response = await fetch('https://ramsays-detailing.onrender.com/api/users')
         const json = await response.json()
 
         if (response.ok) {

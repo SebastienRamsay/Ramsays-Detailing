@@ -26,9 +26,8 @@ const app = express()
 // middleware
 app.use(
   cors({
-    origin: "*",
+    origin: process.env.ORIGIN,
     credentials: true,
-    exposedHeaders: ['Access-Control-Allow-Origin']
   })
 );
 

@@ -141,7 +141,8 @@ router.get( '/auth/google/callback',
 router.get('/protected', isLoggedIn, async function(req, res) {
   const userID = localStorage.getItem('userID')
   res.cookie("user", userID, {
-    httpOnly: true
+    httpOnly: true,
+    sameSite: 'none'
   })
 
   res.redirect(process.env.ORIGIN + '/services')

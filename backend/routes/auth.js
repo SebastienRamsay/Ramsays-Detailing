@@ -142,7 +142,8 @@ router.get('/protected', isLoggedIn, async function(req, res) {
   const userID = localStorage.getItem('userID')
   res.cookie("user", userID, {
     httpOnly: true,
-    sameSite: 'none'
+    sameSite: 'none',
+    secure: 'true'
   })
 
   res.redirect(process.env.ORIGIN + '/services')

@@ -152,6 +152,8 @@ router.get('/protected', isLoggedIn, async function(req, res) {
 router.get('/logout', (req, res) => {
     res.cookie('user', "", {
       httpOnly: true,
+      sameSite: 'none',
+      secure: 'true',
       expires: new Date(0)
     }).send()
     console.log('Logged Out')

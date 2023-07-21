@@ -8,7 +8,7 @@ function ServicesContextProvider(props){
 
   async function getServices() { 
     try {
-      const response = await axios.get('/api/services', { withCredentials: true });
+      const response = await axios.get('http://45.74.32.213:4000/api/services', { withCredentials: true });
       setServices(response.data);
     } catch (error) {
       console.error('Error fetching services:', error);

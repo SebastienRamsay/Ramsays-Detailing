@@ -1,37 +1,24 @@
-import { useEffect, useState } from "react"
+import { useContext } from "react";
 
-import ServiceDetails from "../components/ServiceDetails"
-import { Link } from "react-router-dom"
-
+import { Link } from "react-router-dom";
+import ServiceDetails from "../components/ServiceDetails";
+import ServicesContext from "../context/ServicesContext";
 
 const Services = () => {
+  const { services } = useContext(ServicesContext);
 
-    const [ services, setServices ] = useState(null)
-    
-
-    useEffect(() => {
-        const fetchServices = async () => {
-            const response = await fetch('/api/services', {
-                method: 'GET',
-                credentials: 'include'
-            })
-            const json = await response.json()
-
-            if (response.ok){
-                setServices(json)
-            }
-        }
-
-        fetchServices()
-    }, []) // add an empty dependency array to run the effect only once on mount
-    return (
-        <div class="flex justify-center gap-10">
-            {services && services.map(service => (
-                <Link to={`/service/${service.title.replace(/\s+/g, '')}`} key={service._id}>
-                    <ServiceDetails service={service}/>
-                </Link>
-            ))}
-        </div>
-    )
-}
-export default Services
+  return (
+    <div className="mx-10 flex flex-col justify-center gap-10 pt-20 md:flex-row">
+      {services &&
+        services.map((service) => (
+          <Link
+            to={`/service/${service.title.replace(/\s+/g, "")}`}
+            key={service._id}
+          >
+            <ServiceDetails service={service} />
+          </Link>
+        ))}
+    </div>
+  );
+};
+export default Services;

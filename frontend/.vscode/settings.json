@@ -1,0 +1,7 @@
+{
+    "editor.codeActionsOnSave": {
+        "source.organizeImports": true
+    },
+    "tailwindCSS.format": "auto",
+    "editor.formatOnSave": true
+}

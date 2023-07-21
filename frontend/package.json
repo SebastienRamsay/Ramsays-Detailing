@@ -2,7 +2,6 @@
   "name": "frontend",
   "version": "0.1.0",
   "private": true,
-  "proxy": "http://localhost:4000",
   "dependencies": {
     "@testing-library/jest-dom": "^5.16.4",
     "@testing-library/react": "^13.3.0",
@@ -19,7 +18,7 @@
     "react-scripts": "^5.0.1"
   },
   "scripts": {
-    "start": "react-scripts start",
+    "start": "set PORT=80 && react-scripts start --host 0.0.0.0",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
@@ -47,8 +46,17 @@
     "autoprefixer": "^10.4.14",
     "dotenv-webpack": "^8.0.1",
     "http-proxy-middleware": "^2.0.6",
-    "postcss": "^8.4.24",
-    "tailwindcss": "^3.3.2",
-    "webpack-cli": "^5.1.4"
+    "postcss": "^8.4.26",
+    "prettier": "^2.8.8",
+    "prettier-plugin-tailwindcss": "^0.4.1",
+    "tailwindcss": "^3.3.3",
+    "webpack": "^5.88.1",
+    "webpack-cli": "^5.1.4",
+    "webpack-dev-server": "^4.15.1"
+  },
+  "DevServer": {
+    "allowedHosts": [
+      "45.74.32.213"
+    ]
   }
 }

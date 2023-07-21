@@ -1,35 +1,42 @@
-import React, { useState, useContext } from 'react';
-import 'react-datepicker/dist/react-datepicker.css';
-import AuthContext from '../context/AuthContext'
+import React, { useContext, useState } from "react";
+import "react-datepicker/dist/react-datepicker.css";
+import CartContext from "../context/CartContext";
 
 const FullServiceDetails = ({ service }) => {
-  const imageDirectory = '/images/';
-  
+  const imageDirectory = "http://45.74.32.213:4000/images/";
+
   const imagePath = imageDirectory + service.localImageName;
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
 
-  var [answeredQuestions] = useState([])
+  var [answeredQuestions] = useState([]);
   var [price, setPrice] = useState(0);
-  var [cartResponse, setCartResponse] = useState("")
-  const { getCartLength } = useContext(AuthContext)
+  var [cartResponse, setCartResponse] = useState("");
+  const { addToCartContext, cartContextResponse } = useContext(CartContext);
   var [additionalQuestions, setAdditionalQuestions] = useState([]);
-  
 
-
-
-
-  function calculatePrice({ questionobj, question, answer, answer_id, costIncreaseString }) {
+  function calculatePrice({
+    questionobj,
+    question,
+    answer,
+    answer_id,
+    costIncreaseString,
+  }) {
     var costIncrease = parseInt(costIncreaseString);
     var currentPrice = price;
-    const answeredQuestion = answeredQuestions.find((answeredQuestion) => answeredQuestion.question === question);
-    var additionalQuestions = questionobj.answers.find((answer) => answer._id === answer_id)?.additionalQuestions;
+    const answeredQuestion = answeredQuestions.find(
+      (answeredQuestion) => answeredQuestion.question === question
+    );
+    var additionalQuestions = questionobj.answers.find(
+      (answer) => answer._id === answer_id
+    )?.additionalQuestions;
 
-    if (answeredQuestion) { // Question Answered
-      if (answeredQuestion.costIncrease){
+    if (answeredQuestion) {
+      // Question Answered
+      if (answeredQuestion.costIncrease) {
         currentPrice -= answeredQuestion.costIncrease;
       }
-      
+
       if (costIncrease !== "" && costIncrease !== undefined && costIncrease) {
         currentPrice += costIncrease;
       }
@@ -40,56 +47,54 @@ const FullServiceDetails = ({ service }) => {
       answeredQuestion.questionobj = questionobj;
       answeredQuestion.question_id = questionobj._id;
 
-      if (answeredQuestion.answer === undefined || answeredQuestion.answer === "Select" || answeredQuestion.answer === "" || !answeredQuestion.answer) {
+      if (
+        answeredQuestion.answer === undefined ||
+        answeredQuestion.answer === "Select" ||
+        answeredQuestion.answer === "" ||
+        !answeredQuestion.answer
+      ) {
         const indexToRemove = answeredQuestions.indexOf(answeredQuestion);
         if (indexToRemove !== -1) {
           answeredQuestions.splice(indexToRemove, 1);
         }
       }
-
-    } else { // Question Not Answered
+    } else {
+      // Question Not Answered
       currentPrice += costIncrease;
-      answeredQuestions.push({ question, answer, answer_id, costIncrease, additionalQuestions, questionobj, "question_id": questionobj._id });
+      answeredQuestions.push({
+        question,
+        answer,
+        answer_id,
+        costIncrease,
+        additionalQuestions,
+        questionobj,
+        question_id: questionobj._id,
+      });
     }
 
     setPrice(currentPrice);
-    setCartResponse("")
+    setCartResponse("");
   }
 
-
-
   async function addToCart() {
-    // use answer _id to track 
-    try{
-      if (answeredQuestions.length === service.questions.length + additionalQuestions.length){
-        const response = await fetch('/api/cart/', {
-          method: 'POST',
-          credentials: 'include', // Include cookies in the request
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ "service": {"serviceName": service.title, price, answeredQuestions} }),
-        });
+    // use answer _id to track
+    try {
+      if (
+        answeredQuestions.length ===
+        service.questions.length + additionalQuestions.length
+      ) {
+        service.price = price;
+        service.answeredQuestions = answeredQuestions;
 
-        if (response.ok) {
-          const data = await response.json()
-          console.log('Item added to cart: ', data)
-          setCartResponse('Item added to cart')
-          getCartLength()
-          return true
-        } else {
-          console.error('failed to add item to cart: ', response.status)
-          return false
-        }
-      }else{
-        setCartResponse("Please Answer All Of The Questions.")
+        addToCartContext(service);
+        setCartResponse(cartContextResponse);
+      } else {
+        setCartResponse("Please Answer All Of The Questions.");
       }
-
-    }catch(error){
-      console.log('Error occurred while adding an item to your cart: ', error)
-      setCartResponse(error)
+    } catch (error) {
+      console.log("Error occurred while adding an item to your cart: ", error);
+      setCartResponse(error);
     }
-    
   }
 
   const handleQuestionChange = (question, target) => {
@@ -97,92 +102,111 @@ const FullServiceDetails = ({ service }) => {
     const selectedOption = target.options[selectedIndex];
     const answer_id = selectedOption.getAttribute("_id");
     const selectedAnswer = selectedOption.getAttribute("answer");
-    console.log(question._id)
-    var questionAlreadyAnswered = answeredQuestions.find((answeredQuestion) => answeredQuestion.question_id === question._id);
+    console.log(question._id);
+    var questionAlreadyAnswered = answeredQuestions.find(
+      (answeredQuestion) => answeredQuestion.question_id === question._id
+    );
     console.log("a", answeredQuestions);
 
     if (questionAlreadyAnswered !== undefined) {
-      const additionalQuestionsToRemove = questionAlreadyAnswered.additionalQuestions || [];
-      setAdditionalQuestions((prevAdditionalQuestions) => prevAdditionalQuestions.filter((question) => !additionalQuestionsToRemove.includes(question)));
-      for (let i = 0; i < questionAlreadyAnswered.additionalQuestions?.length; i++){
-        const indexToRemove = answeredQuestions.findIndex((answeredQuestion) => answeredQuestion.question_id === questionAlreadyAnswered.additionalQuestions[i]._id);
-        
+      const additionalQuestionsToRemove =
+        questionAlreadyAnswered.additionalQuestions || [];
+      setAdditionalQuestions((prevAdditionalQuestions) =>
+        prevAdditionalQuestions.filter(
+          (question) => !additionalQuestionsToRemove.includes(question)
+        )
+      );
+      for (
+        let i = 0;
+        i < questionAlreadyAnswered.additionalQuestions?.length;
+        i++
+      ) {
+        const indexToRemove = answeredQuestions.findIndex(
+          (answeredQuestion) =>
+            answeredQuestion.question_id ===
+            questionAlreadyAnswered.additionalQuestions[i]._id
+        );
 
         if (indexToRemove !== -1) {
           console.log("i", indexToRemove);
-          console.log(additionalQuestionsToRemove)
+          console.log(additionalQuestionsToRemove);
           console.log("b", answeredQuestions);
           answeredQuestions.splice(indexToRemove, 1);
         }
       }
-      
-      
 
       console.log("f", answeredQuestions);
     }
-
-       
 
     calculatePrice({
       questionobj: question,
       question: question.question,
       answer: selectedAnswer,
       answer_id: answer_id,
-      costIncreaseString: target.value
+      costIncreaseString: target.value,
     });
 
     setAdditionalQuestions((prevAdditionalQuestions) => [
       ...prevAdditionalQuestions,
-      ...(answeredQuestions.find((answeredQuestion) => answeredQuestion.answer_id === answer_id)?.additionalQuestions || [])
+      ...(answeredQuestions.find(
+        (answeredQuestion) => answeredQuestion.answer_id === answer_id
+      )?.additionalQuestions || []),
     ]);
-    
   };
 
-  const additionalQuestionsHTML = additionalQuestions.map((additionalQuestion) => (
-    <div key={additionalQuestion.question} class="mt-6">
-      <h4 class="text-lg">{additionalQuestion.question}</h4>
-      <select
-        className="text-black rounded-md h-8 w-52"
-        key={additionalQuestion.question}
-        _id={additionalQuestion._id}
-        id="additionalQuestion"
-        onChange={(e) => handleQuestionChange(additionalQuestion, e.target)}
-
-      >
-        <option value="" key="">Select</option>
-        {additionalQuestion.answers.map((additionalAnswer) => (
-          <option
-            key={additionalAnswer.answer}
-            value={additionalAnswer.costIncrease}
-            _id={additionalQuestion._id}
-            answer={additionalAnswer.answer}
-          >
-            {additionalAnswer.answer}
+  const additionalQuestionsHTML = additionalQuestions.map(
+    (additionalQuestion) => (
+      <div key={additionalQuestion.question} className="mt-6">
+        <h4 className="text-lg">{additionalQuestion.question}</h4>
+        <select
+          className="h-8 w-52 rounded-md text-black"
+          key={additionalQuestion.question}
+          _id={additionalQuestion._id}
+          id="additionalQuestion"
+          onChange={(e) => handleQuestionChange(additionalQuestion, e.target)}
+        >
+          <option value="" key="">
+            Select
           </option>
-        ))}
-      </select>
-    </div>
-  ));
-  
+          {additionalQuestion.answers.map((additionalAnswer) => (
+            <option
+              key={additionalAnswer.answer}
+              value={additionalAnswer.costIncrease}
+              _id={additionalQuestion._id}
+              answer={additionalAnswer.answer}
+            >
+              {additionalAnswer.answer}
+            </option>
+          ))}
+        </select>
+      </div>
+    )
+  );
 
   return (
-    <div class="flex flex-col items-center">
+    <div className="flex flex-col items-center pb-40">
+      <span className="mx-10">
+        <img
+          src={imagePath}
+          alt={service.title + " Image"}
+          className="mt-10 lg:h-xl"
+        />
+      </span>
 
-      <img src={imagePath} alt={service.title + " Image"} class="lg:h-xl"/>
-      <div class="flex flex-row gap-80">
-        <div class="mt-16">
-          <h4 class="text-2xl font-bold mb-5">{service.title}</h4>
-          <p class='max-w-md'>{service.description}</p>
+      <div className="mx-10 flex flex-col md:flex-row lg:gap-80">
+        <div className="mt-16">
+          <h4 className="title mb-5 text-2xl font-bold">{service.title}</h4>
+          <p className="max-w-md">{service.description}</p>
         </div>
 
-        <div class="flex flex-col items-center mt-10 font-sans">
+        <div className="mt-10 flex flex-col items-center font-sans">
           <>
             {service.questions &&
               service.questions.map((question) => (
-                <div key={question._id} class="mt-6">
-                  <h4 class="text-lg">{question.question}</h4>
+                <div key={question._id} className="mt-6">
+                  <h4 className="text-lg">{question.question}</h4>
                   <select
-                    className="text-black rounded-md h-8 w-52"
+                    className="h-8 w-52 rounded-md text-black"
                     key={question.question}
                     id="questions"
                     onChange={(e) => handleQuestionChange(question, e.target)}
@@ -202,31 +226,30 @@ const FullServiceDetails = ({ service }) => {
                         </option>
                       ))}
                   </select>
-                  
                 </div>
-              ))
-              
-            }
+              ))}
             {additionalQuestionsHTML}
           </>
-          
 
-          {service.questions.length + additionalQuestions.length === answeredQuestions.length ? (
+          {service.questions.length + additionalQuestions.length ===
+          answeredQuestions.length ? (
             <>
               <p className="mt-8 text-lg">
-                <strong>{price}</strong>
+                <strong>${price}</strong>
               </p>
-              <button onClick={addToCart} className="bg-green-700 button mt-3">
+              <button
+                onClick={addToCart}
+                className="button mt-3 bg-green-700 transition-all duration-500 hover:bg-green-800"
+              >
                 Add To Cart
               </button>
-              <p>{cartResponse}</p>
+              <p className="text-md mt-4 text-green-600 md:text-lg lg:text-xl">
+                {cartResponse}
+              </p>
             </>
           ) : (
             <p></p>
           )}
-
-
-          
         </div>
       </div>
     </div>

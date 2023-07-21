@@ -4,19 +4,22 @@ const jwt = require('jsonwebtoken')
 
 
 const getCart = async (req, res) => {
-
-    try{
-        const userID = req.cookies.user;
-        const cart = await Cart.findOne({userID})
-        if (!cart){
-            res.status(200).json({message: 'No Cart'})
-        }
-        res.status(200).json(cart)
-    }catch(error){
-        res.status(200).json({error: error})
+  try {
+    const encoded_user_id = req.cookies.user;
+    if (encoded_user_id === "guest") {
+      return res.status(200).json({ message: 'Guests don\'t store cart in db' });
     }
+    const user_id = jwt.verify(encoded_user_id, process.env.SECRET).user;
+    const cart = await Cart.findOne({ user_id });
+    if (!cart) {
+      return res.status(200).json({ message: 'No Cart' });
+    }
+    res.status(200).json(cart);
+  } catch (error) {
+    res.status(500).json({ error: error.message }); // Use a different status code, e.g., 500 for server error
+  }
+};
 
-}
 
 const addToCart = async (req, res) => {
   try {

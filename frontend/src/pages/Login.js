@@ -1,42 +1,89 @@
-import { useState } from "react";
+import { useContext, useState } from "react";
 // import { useLogin } from "../hooks/useLogin";
+import axios from "axios";
 import { Link } from "react-router-dom";
+import AuthContext from "../context/AuthContext";
 
-const Login = () =>{
-    const [name, setName] = useState('')
-    // const {login, error, isLoading} = useLogin()
+const Login = () => {
+  const [name, setName] = useState("");
+  const [error, setError] = useState();
+  const { getLoggedIn } = useContext(AuthContext);
+  // const {login, error, isLoading} = useLogin()
 
-    const handleSubmit = async (e) => {
-        e.preventDefault()
+  const guestLogin = async (e) => {
+    e.preventDefault();
+
+    if (!name) {
+      setError("Please provide a name");
+      return;
     }
+    setError();
+    const response = await axios.post(
+      "http://45.74.32.213:4000/guest",
+      {
+        name,
+      },
+      {
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    if (response.status !== 200) {
+      setError("error loging in as guest");
+      console.log("error loging in as guest: " + response);
+    } else {
+      setError(response.message);
+      getLoggedIn();
+    }
+  };
 
-    return (
-        <div class="bg-white flex flex-col items-center justify-center max-w-md mx-auto rounded-3xl pb-5 shadow-2xl">
-            <form onSubmit={handleSubmit}>
-                <h3 class="flex justify-center text-2xl font-bold m-10">Login</h3>
+  return (
+    <div className="flex h-screen flex-col justify-center bg-secondary-0">
+      <div className="mx-auto flex flex-col items-center justify-center rounded-3xl bg-primary-0 px-5 pb-5 shadow-2xl">
+        <h3 className="m-10 flex justify-center text-3xl">
+          <b>Login</b>
+        </h3>
 
-                <label class="font-bold text-lg">Name</label>
-                <input
-                    type="text"
-                    onChange={(e) => setName(e.target.value)}
-                    value={name}
-                    class="ml-2 border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-                <button onClick={handleSubmit} class="bg-gray-400 ml-2 button">Log In As Guest</button>
-                
-                {/* {error && <div className="error">{error}</div>} */}
-            </form>
-            <p class="p-5 font-bold text-xl">or</p>
-            <Link to="http://localhost:4000/auth/google">
-                <button class="bg-blue-600 flex items-center">
-                    <img src='/images/google.png' alt="google" class="h-auto w-10 p-1"/>
-                    <span class="mx-2 text-gray-50">Sign in with Google</span>
-                </button>
-            </Link>    
-            <p class="pt-2">Allows Calender Use</p>
-        </div>
-        
-    )
-}
+        <form
+          onSubmit={guestLogin}
+          className="flex flex-col sm:flex-row sm:items-center sm:gap-3"
+        >
+          <label className="text-lg font-bold">Name:</label>
+          <input
+            type="text"
+            onChange={(e) => setName(e.target.value)}
+            value={name}
+            className="mt-1 h-10 rounded-md border border-gray-300 px-4 text-black focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 sm:mt-0"
+          />
+          <button
+            onClick={guestLogin}
+            className="button mt-5 bg-ramsayBlue-0 text-white sm:mt-0"
+          >
+            Log In As Guest
+          </button>
+        </form>
+        {error && (
+          <div className="mt-2 text-lg text-red-500">
+            <b>{error}</b>
+          </div>
+        )}
+        <p className="p-5 text-xl font-bold">or</p>
+        <Link to="http://45.74.32.213:4000/auth/google">
+          <button className="flex items-center rounded-full bg-ramsayBlue-0 p-2 hover:bg-ramsayBlueHover-0">
+            <img
+              src="http://45.74.32.213:4000/images/google.png"
+              alt="google"
+              className="h-auto w-9 rounded-full sm:w-10"
+            />
+            <span className="text-bold mx-2 text-lg">Sign in with Google</span>
+          </button>
+        </Link>
+        <p className="pt-2">Allows Calender Use</p>
+      </div>
+    </div>
+  );
+};
 
-export default Login
+export default Login;

@@ -4,6 +4,7 @@ import axios from "axios"
 
 // pages & components
 import Home from './pages/Home'
+import About from './pages/About'
 import Login from './pages/Login'
 import Cart from './pages/Cart'
 import Services from './pages/Services'
@@ -11,7 +12,8 @@ import Service from './pages/Service'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import AuthContext from './context/AuthContext'
-import { useContext } from 'react'
+import { useContext, useEffect } from 'react'
+import CartContext from './context/CartContext'
 
 export const BACKEND = "https://ramsays-detailing.onrender.com"
 
@@ -21,13 +23,22 @@ axios.defaults.withCredentials = true
 function App() {
 
   const { loggedIn } = useContext(AuthContext)
+  const { getCart } = useContext(CartContext)
+
+  useEffect(() => {
+    if (loggedIn)(
+      getCart()
+    )
+  }, [loggedIn, getCart])
+  
+  
 
   if (loggedIn === undefined){
     return (
-      <div class="app">
+      <div className="app">
       <BrowserRouter>
         
-        <div class="pages">
+        <div className="pages">
           
         </div>
         <Footer/>
@@ -38,14 +49,18 @@ function App() {
   }
 
   return (
-      <div class="app">
+      <div>
       <BrowserRouter>
         <Navbar />
-        <div class="pages">
+        <div className='min-h-screen font-body italic font-semibold bg-secondary-0 text-white'>
           <Routes>
             <Route 
               path="/" 
               element={loggedIn ? <Home /> : <Navigate to="/login"/>} 
+            />
+            <Route 
+              path="/about" 
+              element={loggedIn ? <About /> : <Navigate to="/login"/>} 
             />
             <Route 
               path="/login"

@@ -3,9 +3,12 @@ const passport = require('passport');
 const { LocalStorage } = require('node-localstorage')
 const localStorage = new LocalStorage('./scratch')
 require('../passport')
+const path = require('path');
+
 const jwt = require('jsonwebtoken')
 const User = require('../models/userModel')
-const { google } = require('googleapis')
+const { google } = require('googleapis');
+const { start } = require('repl');
 
 
 
@@ -23,6 +26,12 @@ router.get('/LoggedIn', async function(req, res) {
       return res.send(false)
     }
 
+    if (userID === "guest"){
+      const guestName = req.cookies.name
+      console.log('guest logged in: ' + guestName)
+      return res.send("guest")
+    }
+    
     const decodedUserID = jwt.verify(userID, process.env.SECRET)
 
     const user = await User.findOne({decodedUserID})
@@ -33,96 +42,23 @@ router.get('/LoggedIn', async function(req, res) {
 
     if (refreshToken.exp < now) {
       console.log('Refresh token has expired')
-      res.redirect(process.env.ORIGIN + '/logout')
+      res.redirect('/logout')
     }
-
     console.log('user is logged in')
+    
     return res.send(true)
     
   }catch(error){
 
     console.log("/LoggedIn: ", error)
 
-    res.redirect(process.env.ORIGIN + '/logout')
+    res.redirect('/logout')
   }
   
   
 });
 
-router.post('/Calendar', async function(req, res) {
-  try{
-    const userID = req.cookies.user
-    const { summary, location, description, startTime, endTime } = { ...req.body }
-    
-    if (!userID) {
-      console.log('user not logged in')
-      return res.send(false)
-    }
 
-    const decodedUserID = jwt.verify(userID, process.env.SECRET)
-
-    const user = await User.findOne({decodedUserID})
-
-    const decodedUser = jwt.verify(user.clientCodes, process.env.SECRET)
-
-    const refreshToken = decodedUser.refreshToken
-
-    oauth2Client = new google.auth.OAuth2(
-      process.env.GOOGLE_CLIENT_ID,
-      process.env.GOOGLE_CLIENT_SECRET,
-      process.env.ORIGIN
-    );
-
-    oauth2Client.setCredentials({refresh_token: refreshToken})
-    const calendar = google.calendar({ version: 'v3'});
-
-    // Get the current date
-    const currentDate = new Date();
-
-    // Set the date for tomorrow
-    const tomorrow = new Date(currentDate);
-    tomorrow.setDate(currentDate.getDate() + 1);
-
-    const event = {
-      summary: 'Sample Event',
-      location: 'Sample Location',
-      description: 'This is a sample event created using the Google Calendar API.',
-      start: {
-        dateTime: currentDate.toISOString(),
-        timeZone: 'America/New_York', // Eastern Standard Time (EST)
-      },
-      end: {
-        dateTime: tomorrow.toISOString(),
-        timeZone: 'America/New_York', // Eastern Standard Time (EST)
-      },
-      attendees: [
-        { email: 'attendee1@example.com' },
-        { email: 'attendee2@example.com' },
-      ],
-    };
-
-    try {
-      const response = await calendar.events.insert({
-        auth: oauth2Client,
-        calendarId: 'primary', // Use 'primary' for the authenticated user's primary calendar
-        resource: event,
-      });
-
-      console.log('Event created:', response.data);
-    } catch (error) {
-      console.error('Error creating event:', error);
-    }
-    //CreateCalendarEvent({ oauth2Client, summary, location, description, startTime, endTime })
-    
-  }catch(error){
-
-    console.log("/Calendar: ", error)
-
-    res.redirect(process.env.ORIGIN + '/logout')
-  }
-
-  
-})
 
 router.get('/auth/google',
   passport.authenticate('google', 
@@ -130,6 +66,24 @@ router.get('/auth/google',
   accessType: 'offline',
   prompt: 'consent' }
 ));
+
+router.post('/guest', async function(req, res) {
+  const { name } = req.body;
+
+  res.cookie("user", "guest", {
+    httpOnly: true,
+    secure: false,
+  });
+  
+
+  res.cookie("name", name, {
+    httpOnly: true,
+    secure: false,
+  });
+
+  res.status(200).json({ message: 'Guest login successful' });
+});
+
 
 router.get( '/auth/google/callback',
   passport.authenticate( 'google', {
@@ -141,22 +95,193 @@ router.get( '/auth/google/callback',
 router.get('/protected', isLoggedIn, async function(req, res) {
   const userID = localStorage.getItem('userID')
   res.cookie("user", userID, {
-    httpOnly: true
+    httpOnly: true,
+    domain: ".ramsaysdetailing.ca",
+    secure: 'false',
+    SameSite: 'None',
   })
 
-  res.redirect(process.env.ORIGIN + '/services')
+  res.redirect(process.env.ORIGIN)
 });
 
 router.get('/logout', (req, res) => {
     res.cookie('user', "", {
       httpOnly: true,
+      secure: 'false',
+      SameSite: 'None',
       expires: new Date(0)
-    }).send()
+    })
+    res.cookie('name', "", {
+      httpOnly: true,
+      secure: 'false',
+      sameSite: 'None',
+      expires: new Date(0)
+    })
     console.log('Logged Out')
+    res.send()
+    
 });
 
 router.get('/auth/google/failure', (req, res) => {
   res.send('Failed to authenticate..');
 });
+
+
+
+
+router.get('/busyEvents', async (req, res) => {
+  try {
+    const keyFile = path.join(__dirname, '..', 'ramsays-detailing-c3736ce730e8.json');
+
+    const auth = new google.auth.GoogleAuth({
+      keyFile,
+      scopes: ['https://www.googleapis.com/auth/calendar'],
+    });
+
+    
+    const calendar = google.calendar({ version: 'v3', auth });
+
+    // Fetch the busy events from the Google Calendar API
+    const response = await calendar.events.list({
+      calendarId: 'primary',
+      timeMin: new Date().toISOString(),
+      maxResults: 25,
+      singleEvents: true,
+      orderBy: 'startTime',
+    });
+
+    const busyEvents = response.data.items.map((event) => ({
+      start: event.start.dateTime || event.start.date,
+      end: event.end.dateTime || event.end.date,
+      summary: event.summary,
+      isAllDay: !event.start.dateTime && !event.end.dateTime,
+    }));
+
+    res.json(busyEvents);
+  } catch (error) {
+    console.error('Error fetching busy events:', error);
+    res.status(500).json({ error: 'Error fetching busy events' });
+  }
+});
+
+const freeBusy = async function(calendar, event, freeBusyQuery, auth) {
+  const response = await calendar.freebusy.query(freeBusyQuery);
+  const calendars = response.data.calendars;
+  const primaryCalendar = calendars.primary;
+
+  // Process busy time slots for the primary calendar
+  const busyTimeSlots = primaryCalendar.busy;
+
+  if (busyTimeSlots.length === 0){
+    try {
+      const response = await calendar.events.insert({
+        auth: auth,
+        calendarId: 'primary',
+        resource: event,
+      });
+
+      console.log('Event created:', response.data);
+    } catch (error) {
+      throw new Error('Error creating event:', error);
+    }
+  }else{
+    console.log(`busy: ${busyTimeSlots}`)
+    return busyTimeSlots
+  }
+
+  // Iterate over each busy time slot
+  // for (const timeSlot of busyTimeSlots) {
+  //   const start = new Date(timeSlot.start);
+  //   const end = new Date(timeSlot.end);
+
+    
+  // }
+}
+
+router.post('/Calendar', async function(req, res) {
+  try {
+    const userID = req.cookies.user;
+    const { summary, location, description, startTime, endTime } = req.body;
+
+    const event = {
+      summary: summary,
+      location: location,
+      description: description,
+      start: {
+        dateTime: startTime,
+        timeZone: 'America/New_York',
+      },
+      end: {
+        dateTime: endTime,
+        timeZone: 'America/New_York',
+      },
+    };
+
+    if (!userID) {
+      console.log('User not logged in');
+      return res.status(401).send('User not logged in');
+    }
+
+    const freeBusyQuery = {
+      resource: {
+        timeMin: startTime,
+        timeMax: endTime,
+        items: [{ id: 'primary' }],
+      },
+    };
+
+    const keyFile = path.join(__dirname, '..', 'ramsays-detailing-c3736ce730e8.json');
+    const auth = new google.auth.GoogleAuth({
+      keyFile,
+      scopes: ['https://www.googleapis.com/auth/calendar'],
+    });
+    const calendar = google.calendar({ version: 'v3', auth });
+    try{
+      const busyTimeSlots = await freeBusy(calendar, event, freeBusyQuery, auth);
+      if (busyTimeSlots) {
+        return res.send('Ramsays Detailing is busy');
+      }
+    }catch(error){
+      console.log("error creating Ramsays Detailing event: ", error)
+    }
+    
+
+    if (userID !== 'guest') {
+      try {
+        const decodedUserID = jwt.verify(userID, process.env.SECRET);
+        const user = await User.findOne({ _id: decodedUserID.user });
+        const decodedUser = jwt.verify(user.clientCodes, process.env.SECRET);
+        const refreshToken = decodedUser.refreshToken;
+
+        const oauth2Client = new google.auth.OAuth2(
+          process.env.GOOGLE_CLIENT_ID,
+          process.env.GOOGLE_CLIENT_SECRET,
+          process.env.ORIGIN
+        );
+
+        oauth2Client.setCredentials({ refresh_token: refreshToken });
+        const guestCalendar = google.calendar({ version: 'v3', auth: oauth2Client });
+
+        try{
+          const guestBusyTimeSlots = await freeBusy(guestCalendar, event, freeBusyQuery, oauth2Client);
+          if (guestBusyTimeSlots) {
+            return res.send('User is busy');
+          }
+        }catch(error){
+          console.log("error creating user event: ", error)
+        }
+
+        return res.send('Events created in calendar');
+      } catch (error) {
+        console.error('Error making user event:', error);
+        return res.status(400).send('Error making user event: ' + error.message);
+      }
+    }
+  } catch (error) {
+    console.error('/Calendar:', error);
+    res.status(400).send('/Calendar: ' + error.message);
+  }
+});
+
 
 module.exports = router

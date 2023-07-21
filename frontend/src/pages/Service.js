@@ -4,7 +4,7 @@ import FullServiceDetails from "../components/fullServiceDetails"
 import { useContext } from "react";
 import ServicesContext from '../context/ServicesContext';
 
-const Services = () => {
+const Service = () => {
 
     const { services } = useContext(ServicesContext)
     const { serviceName } = useParams()
@@ -19,4 +19,4 @@ const Services = () => {
         </div>
     )
 }
-export default Services
+export default Service

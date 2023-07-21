@@ -1,70 +1,198 @@
-import { Link, useLocation } from 'react-router-dom'
-import LogOutBtn from './LogOutBtn'
-import { useContext } from 'react'
-import AuthContext from '../context/AuthContext'
+import { useContext, useState } from "react";
+import { Link } from "react-router-dom";
+import AuthContext from "../context/AuthContext";
+import CartContext from "../context/CartContext";
+import LogOutBtn from "./LogOutBtn";
 
 const Navbar = () => {
-
-  const { loggedIn, getCartLength, cartLength } = useContext(AuthContext)
-  const location = useLocation()
-  const isCartPage = location.pathname === '/cart';
-  
-  if (loggedIn){
-    getCartLength()
-  }
-  
+  const { loggedIn } = useContext(AuthContext);
+  const { cartLength } = useContext(CartContext);
+  const [toggle, setToggle] = useState(false);
 
   return (
-    <header class="text-white">
-      <div class="bg-primary-0 pt-5 pl-10 pr-20 pb-2">
-        <Link to="/" class="inline-block text-center">
-          <img class="h-auto w-64" src='/images/LOGO.png' alt="logo"/>
-          <h1 class="title">Ramsay's Detailing</h1>
+    <header className="relative bg-primary-0 py-11 text-white lg:h-[150px]">
+      <nav className="">
+        <Link to="/" className="absolute left-4 top-5 sm:left-8 sm:top-8">
+          <img
+            className="w-[155px] lg:w-[275px]"
+            src="http://45.74.32.213:4000/images/LOGO.png"
+            alt="logo"
+          />
+          <h1 className="font-title text-lg font-bold italic text-white lg:text-[32px]">
+            RAMSAY'S DETAILING
+          </h1>
         </Link>
-        <nav class="">
-          {loggedIn && (
+
+        {loggedIn && (
           <div>
-            <div class="flex justify-center font-semibold">
-              <Link to="/">
-                <button class="hover:font-bold">Home</button>
-              </Link>
-              <Link to='/services'>
-                <button class="hover:font-bold ml-10">Services</button>
-              </Link>
-              <Link to='/about'>
-                <button class="ml-10 hover:font-bold">About</button>
-              </Link>
+            <div className="hidden lg:block">
+              <div className="mt-16 flex flex-row justify-center gap-10 font-semibold">
+                <Link to="/">
+                  <button className="hover:text-lg hover:font-bold">
+                    Home
+                  </button>
+                </Link>
+                <Link to="/services">
+                  <button className="hover:text-lg hover:font-bold">
+                    Services
+                  </button>
+                </Link>
+                <Link to="/about">
+                  <button className="hover:text-lg hover:font-bold">
+                    About
+                  </button>
+                </Link>
+              </div>
+              <span className="absolute right-10 top-14 flex flex-row-reverse items-center gap-4">
+                <div className="button mt-3 bg-red-600 text-lg transition-all duration-500 hover:bg-red-700">
+                  <LogOutBtn />
+                </div>
+
+                <Link
+                  to="/cart"
+                  className="relative flex flex-col items-center"
+                >
+                  <h1 className={"absolute ml-1"}>
+                    <b>{cartLength}</b>
+                  </h1>
+                  <img
+                    alt="cart"
+                    src="http://45.74.32.213:4000/images/cart.png"
+                    className="max-h-11"
+                  />
+                </Link>
+
+                <a
+                  href="https://www.instagram.com/ramsays_detailing/"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <img
+                    src="http://45.74.32.213:4000/images/instagram.png"
+                    alt="instagram"
+                    className="max-h-7"
+                  />
+                </a>
+                <a
+                  href="https://www.facebook.com/ramsaydetailing"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <img
+                    src="http://45.74.32.213:4000/images/facebook.png"
+                    alt="facebook"
+                    className="max-h-11"
+                  />
+                </a>
+                <a href="tel:+16137692098">
+                  <img
+                    src="http://45.74.32.213:4000/images/phone.png"
+                    alt="phone"
+                    className="max-h-7"
+                  />
+                </a>
+              </span>
             </div>
-            <span class="flex">
-              <div class="absolute end-0 right-16 top-11 bg-red-700 button">
-                <LogOutBtn/>
-              </div> 
-              {!isCartPage && (
-                <div>
-                  <Link to="/cart" class="absolute right-40 top-9 flex flex-col items-center">
-                    <h1 class="absolute ml-1"><b>{cartLength}</b></h1>
-                    <img alt="cart" src='/images/cart.png' class="max-h-11"/>
+
+            {/* MOBILE NAVBAR */}
+            <div className="lg:hidden">
+              <img
+                src={"http://45.74.32.213:4000/images/MenuLogo.png"}
+                alt="mobile nav"
+                onClick={() => setToggle((prev) => !prev)}
+                className={
+                  "absolute right-3 top-7 w-10 transition-transform " +
+                  (toggle
+                    ? "scale-0"
+                    : "scale-1 animate-open-menu-spin-reverse")
+                }
+              />
+              <img
+                src={"http://45.74.32.213:4000/images/MenuLogoX.png"}
+                alt="mobile nav"
+                onClick={() => setToggle((prev) => !prev)}
+                className={
+                  "absolute right-3 top-7 w-10 transition-transform " +
+                  (toggle ? "scale-1 animate-open-menu-spin" : "scale-0")
+                }
+              />
+
+              <div
+                className={
+                  toggle
+                    ? "bg-white-0 absolute right-0 top-[88px] origin-right animate-open-menu rounded-l-xl bg-ramsayBlue-0 pb-10"
+                    : "hidden"
+                }
+              >
+                <div className="ml-1 mt-3 flex flex-row-reverse gap-3">
+                  <div className="button my-auto mr-4 w-[87px] bg-red-700 text-center">
+                    <LogOutBtn />
+                  </div>
+
+                  <Link to="/cart" className="flex flex-col items-center">
+                    <h1 className="absolute ml-1">
+                      <b>{cartLength}</b>
+                    </h1>
+                    <img
+                      alt="cart"
+                      src="http://45.74.32.213:4000/images/cart.png"
+                      className="max-h-11"
+                    />
                   </Link>
-                  <a href='https://www.instagram.com/ramsays_detailing/' target="_blank" rel="noreferrer" class="absolute right-56 top-12 mr-2">
-                    <img src='/images/instagram.png' alt="instagram" class="max-h-6"/>
+
+                  <a
+                    href="https://www.instagram.com/ramsays_detailing/"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-[9px]"
+                  >
+                    <img
+                      src="http://45.74.32.213:4000/images/instagram.png"
+                      alt="instagram"
+                      className="max-h-6"
+                    />
                   </a>
-                  <a href='https://www.facebook.com/ramsaydetailing' target="_blank" rel="noreferrer" class="absolute right-64 top-10 mr-2">
-                    <img src='/images/facebook.png' alt="facebook" class="max-h-10"/>
+                  <a
+                    href="https://www.facebook.com/ramsaydetailing"
+                    target="_blank"
+                    rel="noreferrer"
+                    className=""
+                  >
+                    <img
+                      src="http://45.74.32.213:4000/images/facebook.png"
+                      alt="facebook"
+                      className="max-h-10"
+                    />
                   </a>
-                  <a href="tel:+16137692098" class="absolute right-72 top-12 mr-6">
-                    <img src='/images/phone.png' alt="phone" class="max-h-6"/>
+                  <a
+                    href="tel:+16137692098"
+                    className="absolute right-72 top-12 mr-6"
+                  >
+                    <img
+                      src="http://45.74.32.213:4000/images/phone.png"
+                      alt="phone"
+                      className="max-h-6"
+                    />
                   </a>
                 </div>
-              )}  
-              
-            </span>
-            
+                <div className="mt-7 flex flex-col items-center gap-7 text-4xl">
+                  <Link to="/">
+                    <button className="font-bold">Home</button>
+                  </Link>
+                  <Link to="/services">
+                    <button className="font-bold">Services</button>
+                  </Link>
+                  <Link to="/about">
+                    <button className="font-bold">About</button>
+                  </Link>
+                </div>
+              </div>
+            </div>
           </div>
-          )}
-        </nav>
-      </div>
+        )}
+      </nav>
     </header>
-  )
-}
+  );
+};
 
-export default Navbar
+export default Navbar;

@@ -44,7 +44,6 @@ function CartContextProvider(props) {
       });
       const busyEvents = response.data;
       setBusyTimes(busyEvents);
-      console.log(busyEvents);
     } catch (error) {
       console.error("Error fetching busy events:", error);
     }
@@ -65,7 +64,6 @@ function CartContextProvider(props) {
   }, [cart, isGuest]);
 
   async function addToCartContext(service) {
-    console.log(service.price);
     if (isGuest) {
       if (!cart || cart === undefined) {
         console.log("cart doesn't exist or is undefined");
@@ -145,7 +143,6 @@ function CartContextProvider(props) {
       return; // No items in the cart, nothing to remove
     }
     if (isGuest === false) {
-      console.log(service._id);
       const response = await axios.delete("http://45.74.32.213:4000/api/cart", {
         withCredentials: true,
         headers: {

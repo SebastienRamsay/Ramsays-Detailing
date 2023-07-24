@@ -1,17 +1,37 @@
-import { useContext, useState } from "react";
+import { useContext, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import AuthContext from "../context/AuthContext";
 import CartContext from "../context/CartContext";
+import NavbarContext from "../context/NavbarContext";
 import LogOutBtn from "./LogOutBtn";
 
 const Navbar = () => {
   const { loggedIn } = useContext(AuthContext);
   const { cartLength } = useContext(CartContext);
-  const [toggle, setToggle] = useState(false);
+  const { mobileNavOpen, setMobileNavOpen } = useContext(NavbarContext);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    const handleOutsideClick = (event) => {
+      if (
+        mobileNavOpen &&
+        menuRef.current &&
+        !menuRef.current.contains(event.target)
+      ) {
+        setMobileNavOpen(false);
+      }
+    };
+
+    document.addEventListener("click", handleOutsideClick);
+
+    return () => {
+      document.removeEventListener("click", handleOutsideClick);
+    };
+  }, [mobileNavOpen, setMobileNavOpen]);
 
   return (
     <header className="relative bg-primary-0 py-11 text-white lg:h-[150px]">
-      <nav className="">
+      <nav className="" ref={menuRef}>
         <Link to="/" className="absolute left-4 top-5 sm:left-8 sm:top-8">
           <img
             className="w-[155px] lg:w-[275px]"
@@ -99,10 +119,10 @@ const Navbar = () => {
               <img
                 src={"http://45.74.32.213:4000/images/MenuLogo.png"}
                 alt="mobile nav"
-                onClick={() => setToggle((prev) => !prev)}
+                onClick={() => setMobileNavOpen((prev) => !prev)}
                 className={
                   "absolute right-3 top-7 w-10 transition-transform " +
-                  (toggle
+                  (mobileNavOpen
                     ? "scale-0"
                     : "scale-1 animate-open-menu-spin-reverse")
                 }
@@ -110,16 +130,16 @@ const Navbar = () => {
               <img
                 src={"http://45.74.32.213:4000/images/MenuLogoX.png"}
                 alt="mobile nav"
-                onClick={() => setToggle((prev) => !prev)}
+                onClick={() => setMobileNavOpen((prev) => !prev)}
                 className={
                   "absolute right-3 top-7 w-10 transition-transform " +
-                  (toggle ? "scale-1 animate-open-menu-spin" : "scale-0")
+                  (mobileNavOpen ? "scale-1 animate-open-menu-spin" : "scale-0")
                 }
               />
 
               <div
                 className={
-                  toggle
+                  mobileNavOpen
                     ? "bg-white-0 absolute right-0 top-[88px] origin-right animate-open-menu rounded-l-xl bg-ramsayBlue-0 pb-10"
                     : "hidden"
                 }

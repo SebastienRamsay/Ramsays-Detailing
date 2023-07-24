@@ -1,10 +1,11 @@
-import React, { createContext, useEffect, useState } from "react";
+import React, { createContext, useEffect, useRef, useState } from "react";
 
 const AuthContext = createContext();
 
 function AuthContextProvider(props) {
   const [loggedIn, setLoggedIn] = useState(undefined);
   const [isGuest, setIsGuest] = useState(undefined);
+  const isMounted = useRef(false);
 
   async function getLoggedIn() {
     try {
@@ -35,8 +36,14 @@ function AuthContextProvider(props) {
   }
 
   useEffect(() => {
-    getLoggedIn();
-  }, []);
+    if (!isMounted.current) {
+      getLoggedIn();
+    }
+
+    return () => {
+      isMounted.current = true;
+    };
+  }, [isMounted]);
 
   return (
     <AuthContext.Provider value={{ isGuest, loggedIn, getLoggedIn }}>

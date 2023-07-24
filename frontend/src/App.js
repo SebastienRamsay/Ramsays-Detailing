@@ -1,91 +1,75 @@
-
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import axios from "axios"
+import axios from "axios";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 
 // pages & components
-import Home from './pages/Home'
-import About from './pages/About'
-import Login from './pages/Login'
-import Cart from './pages/Cart'
-import Services from './pages/Services'
-import Service from './pages/Service'
-import Navbar from './components/Navbar'
-import Footer from './components/Footer'
-import AuthContext from './context/AuthContext'
-import { useContext, useEffect } from 'react'
-import CartContext from './context/CartContext'
+import { useContext, useEffect } from "react";
+import Footer from "./components/Footer";
+import Navbar from "./components/Navbar";
+import AuthContext from "./context/AuthContext";
+import CartContext from "./context/CartContext";
+import About from "./pages/About";
+import Cart from "./pages/Cart";
+import Home from "./pages/Home";
+import Login from "./pages/Login";
+import Service from "./pages/Service";
+import Services from "./pages/Services";
 
-export const BACKEND = "https://ramsays-detailing.onrender.com"
+export const BACKEND = "https://ramsays-detailing.onrender.com";
 
-
-axios.defaults.withCredentials = true
+axios.defaults.withCredentials = true;
 
 function App() {
-
-  const { loggedIn } = useContext(AuthContext)
-  const { getCart } = useContext(CartContext)
+  const { loggedIn } = useContext(AuthContext);
+  const { getCart } = useContext(CartContext);
 
   useEffect(() => {
-    if (loggedIn)(
-      getCart()
-    )
-  }, [loggedIn, getCart])
-  
-  
+    if (loggedIn) getCart();
+  }, [loggedIn, getCart]);
 
-  if (loggedIn === undefined){
+  if (loggedIn === undefined) {
     return (
       <div className="app">
-      <BrowserRouter>
-        
-        <div className="pages">
-          
-        </div>
-        <Footer/>
-      </BrowserRouter>
-    </div>
-    
-  );
+        <BrowserRouter>
+          <div className="pages"></div>
+          <Footer />
+        </BrowserRouter>
+      </div>
+    );
   }
 
   return (
-      <div>
+    <div>
       <BrowserRouter>
         <Navbar />
-        <div className='min-h-screen font-body italic font-semibold bg-secondary-0 text-white'>
+        <div className="page min-h-screen bg-secondary-0 font-body font-semibold italic text-white">
           <Routes>
-            <Route 
-              path="/" 
-              element={loggedIn ? <Home /> : <Navigate to="/login"/>} 
-            />
-            <Route 
-              path="/about" 
-              element={loggedIn ? <About /> : <Navigate to="/login"/>} 
-            />
-            <Route 
-              path="/login"
-              element={!loggedIn ? <Login /> : <Navigate to="/"/>} 
-            />
-            <Route 
-              path="/services"
-              element={!loggedIn ? <Login /> : <Services/>} 
-            />
-            <Route 
-              path="/service/:serviceName"
-              element={!loggedIn ? <Login /> : <Service/>} 
+            <Route
+              path="/"
+              element={loggedIn ? <Home /> : <Navigate to="/login" />}
             />
             <Route
-              path='/cart'
-              element={!loggedIn ? <Login /> : <Cart/>}
+              path="/about"
+              element={loggedIn ? <About /> : <Navigate to="/login" />}
             />
+            <Route
+              path="/login"
+              element={!loggedIn ? <Login /> : <Navigate to="/" />}
+            />
+            <Route
+              path="/services"
+              element={!loggedIn ? <Login /> : <Services />}
+            />
+            <Route
+              path="/service/:serviceName"
+              element={!loggedIn ? <Login /> : <Service />}
+            />
+            <Route path="/cart" element={!loggedIn ? <Login /> : <Cart />} />
           </Routes>
         </div>
-        <Footer/>
+        <Footer />
       </BrowserRouter>
     </div>
-    
   );
 }
 
 export default App;
-

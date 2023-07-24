@@ -50,7 +50,6 @@ const DateTimePicker = ({ service, index }) => {
       let start = new Date(busyTime.start);
       let end = new Date(busyTime.end);
       let current = new Date(start);
-      console.log(busyTime);
       while (current <= end) {
         excludeTimes.push(new Date(current));
         current.setMinutes(current.getMinutes() + 15);
@@ -74,15 +73,12 @@ const DateTimePicker = ({ service, index }) => {
       let end = new Date(start);
       end.setHours(end.getHours() + selectedDateTime.timeToComplete);
       let current = new Date(start);
-      console.log(start, end);
-      console.log(selectedDateTime);
       while (current <= end) {
         excludeTimes.push(new Date(current));
         current.setMinutes(current.getMinutes() + 15);
       }
     }
   });
-  console.log(excludeTimes);
 
   const selectedDateTimeObj = selectedDateTimes.find(
     (selectedDateTime) => selectedDateTime.index.toString() === index.toString()

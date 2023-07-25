@@ -15,14 +15,13 @@ function isLoggedIn(req, res, next) {
 }
 
 router.get("/assistant", async function getGPT3Response() {
-  const apiKey = process.env.OPENAI_API_KEY;
   const endpoint = "https://api.openai.com/v1/engines/gpt-3.5/tokens/complete";
 
   const chatHistory = [
     {
       role: "system",
       content:
-        "You are an assistant for Ramsay's Detailing. You will only talk about detailing related topics, if the question is not about detailing or the buisness then you do not know the answer. You can provide links to ramsaysdetailing.ca/home, ramsaysdetailing.ca/services, ramsaysdetailing.ca/about. use this json data to provide useful information to the user if requested: ",
+        "You are an assistant for Ramsay's Detailing. You will only talk about detailing related topics, if the question is not about detailing or the buisness then you do not know the answer. Do not say anything that is not true. You can provide links to ramsaysdetailing.ca/home, ramsaysdetailing.ca/services, ramsaysdetailing.ca/about. use this json data to provide useful information to the user if requested: ",
     },
     { role: "user", content: "who are you?" },
   ];
@@ -42,7 +41,7 @@ router.get("/assistant", async function getGPT3Response() {
       {
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${apiKey}`,
+          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
         },
       }
     );
@@ -168,7 +167,7 @@ router.get("/busyEvents", async (req, res) => {
     const keyFile = path.join(
       __dirname,
       "..",
-      "ramsays-detailing-c3736ce730e8.json"
+      "ramsays-detailing-b3135e3f53f5.json"
     );
 
     const auth = new google.auth.GoogleAuth({

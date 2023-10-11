@@ -1,12 +1,25 @@
-const express = require('express')
+const express = require("express");
 const {
-  signupUser,
-  loginUser
-} = require('../controllers/userController')
+  getUserInfo,
+  updateEmployeeInfo,
+  requestUpdateEmployeeInfo,
+  getAllUserInfo,
+  updateEmplyeeStatus,
+  updateEmployeeSchedule,
+} = require("../controllers/userController");
 
-const router = express.Router()
+const router = express.Router();
 
-router.post('/signup', signupUser)
-router.post('/login', loginUser)
+router.get("/info", getUserInfo);
 
-module.exports = router
+router.get("/admin/info", getAllUserInfo);
+
+router.patch("/employee", updateEmplyeeStatus);
+
+router.patch("/employee/info", updateEmployeeInfo);
+
+router.patch("/employee/info/schedule", updateEmployeeSchedule);
+
+router.patch("/employee/info/request", requestUpdateEmployeeInfo);
+
+module.exports = router;

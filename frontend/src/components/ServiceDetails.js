@@ -1,4 +1,4 @@
-const imageDirectory = "http://45.74.32.213:4000/images/";
+const imageDirectory = "https://ramsaysdetailing.ca:4000/images/";
 
 const ServiceDetails = ({ service }) => {
   const imagePath = imageDirectory + service.localImageName;

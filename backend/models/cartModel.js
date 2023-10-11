@@ -12,6 +12,10 @@ const cartSchema = new mongoose.Schema(
       required: true,
       default: 0,
     },
+    timeToComplete: {
+      type: Number,
+      required: true,
+    },
     services: [
       {
         title: {
@@ -60,20 +64,26 @@ cartSchema.statics.addToCart = async function (user_id, service) {
       cart = new this({
         user_id,
         price: service.price,
+        timeToComplete: service.timeToComplete,
         services: [
           {
             title: service.title,
             price: service.price,
             answeredQuestions: service.answeredQuestions,
+            localImageName: service.localImageName,
+            timeToComplete: service.timeToComplete,
           },
         ],
       });
     } else {
       cart.price += service.price;
+      cart.timeToComplete += service.timeToComplete;
       cart.services.push({
         title: service.title,
         price: service.price,
         answeredQuestions: service.answeredQuestions,
+        localImageName: service.localImageName,
+        timeToComplete: service.timeToComplete,
       });
     }
 
@@ -98,9 +108,29 @@ cartSchema.statics.removeFromCart = async function (user_id, service_id) {
     }
 
     cart.price -= service.price;
+    cart.timeToComplete -= service?.timeToComplete;
     cart.services = cart.services.filter(
       (s) => s._id.toString() !== service_id
     );
+
+    await cart.save();
+    return cart;
+  } catch (error) {
+    throw new Error(error);
+  }
+};
+
+cartSchema.statics.clearCart = async function (user_id) {
+  try {
+    const cart = await this.findOne({ user_id });
+
+    if (!cart) {
+      throw new Error("No active cart found");
+    }
+
+    cart.price = 0;
+    cart.services = [];
+    cart.timeToComplete = 0;
 
     await cart.save();
     return cart;

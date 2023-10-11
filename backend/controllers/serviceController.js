@@ -31,6 +31,7 @@ const createService = async (req, res) => {
       const answerSchemaArray = info.answers.map((answer) => ({
         answer: answer.answer,
         costIncrease: answer.costIncrease,
+        additionalQuestions: answer.additionalQuestions,
       }));
 
       const questionSchema = {

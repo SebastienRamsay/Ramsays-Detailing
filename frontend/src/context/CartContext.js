@@ -1,5 +1,12 @@
 import axios from "axios";
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import AuthContext from "./AuthContext";
 
 const CartContext = createContext();
@@ -8,114 +15,73 @@ function CartContextProvider(props) {
   const [cart, setCart] = useState(undefined);
   const [cartLength, setCartLength] = useState(0);
   const [cartContextResponse, setCartResponse] = useState("");
-  const { isGuest } = useContext(AuthContext);
-  const [busyTimes, setBusyTimes] = useState([]);
-  const [selectedDateTimes, setSelectedDateTimes] = useState([]);
+  const [busyTimes, setBusyTimes] = useState(undefined);
+  const [selectedDateTime, setSelectedDateTime] = useState(undefined);
+  const { loggedIn } = useContext(AuthContext);
 
-  async function getCart() {
-    if (isGuest === false) {
-      try {
-        const response = await axios.get("http://45.74.32.213:4000/api/cart", {
-          withCredentials: true,
-        });
-        if (response.status === 200) {
-          const data = response.data;
-          setCart(data);
-          setCartLength(data.services?.length);
-        } else {
-          console.log("Error getting cart: " + response);
-        }
-      } catch (error) {
-        console.error("Error fetching cart:", error);
-      }
-    } else if (isGuest === true) {
-      const storedCart = JSON.parse(localStorage.getItem("Cart"));
-      if (storedCart?.services && !cart?.services) {
-        setCart(storedCart);
-      }
-      setCartLength(cart?.services?.length || 0);
-    }
-  }
-
-  async function fetchBusyTimes() {
+  const getCart = useCallback(async () => {
     try {
-      const response = await axios.get("http://45.74.32.213:4000/busyEvents", {
-        withCredentials: true,
-      });
-      const busyEvents = response.data;
-      setBusyTimes(busyEvents);
-    } catch (error) {
-      console.error("Error fetching busy events:", error);
-    }
-  }
-
-  useEffect(() => {
-    fetchBusyTimes();
-  }, []);
-
-  useEffect(() => {
-    if (isGuest) {
-      if (cart !== undefined && cart) {
-        setCartResponse("Item added to cart");
-        localStorage.setItem("Cart", JSON.stringify(cart));
+      const response = await axios.get(
+        "https://ramsaysdetailing.ca:4000/api/cart",
+        {
+          withCredentials: true,
+        }
+      );
+      if (response.status === 200) {
+        const data = response.data;
+        setCart(data);
+        setCartLength(data.services?.length || 0);
+      } else {
+        console.log("Error getting cart: " + response);
       }
+    } catch (error) {
+      console.error("Error fetching cart:", error);
     }
-    setCartLength(cart?.services?.length || 0);
-  }, [cart, isGuest]);
+  }, [setCart, setCartLength]);
+
+  var isMounted = useRef(false);
+
+  const fetchBusyTimes = useCallback(
+    async ({ customerLocation, expectedTimeToComplete, serviceName }) => {
+      try {
+        const response = await axios.post(
+          "https://ramsaysdetailing.ca:4000/api/bookings/busyTimes",
+          {
+            customerLocation,
+            expectedTimeToComplete,
+            serviceName,
+          },
+          {
+            withCredentials: true,
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        const busyEvents = response.data;
+        setBusyTimes(busyEvents);
+        console.log(busyEvents);
+      } catch (error) {
+        console.error("Error fetching busy events:", error);
+      }
+    },
+    [setBusyTimes]
+  );
+
+  useEffect(() => {
+    if (!isMounted.current && loggedIn !== undefined && loggedIn) {
+      getCart();
+      console.log("GETCART", loggedIn);
+      isMounted.current = true;
+    }
+  }, [loggedIn, getCart, fetchBusyTimes]);
 
   async function addToCartContext(service) {
-    if (isGuest) {
-      if (!cart || cart === undefined) {
-        console.log("cart doesn't exist or is undefined");
-        const newCart = {
-          price: service.price,
-          services: [
-            {
-              id: service._id,
-              title: service.title,
-              price: service.price,
-              localImageName: service.localImageName,
-              timeToComplete: service.timeToComplete,
-              answeredQuestions: service.answeredQuestions,
-            },
-          ],
-        };
-        setCart(newCart);
-        setCartLength(newCart?.services?.length);
-        setCartResponse("Item added to cart");
-      } else {
-        const updatedCart = {
-          price: cart.price ? cart.price + service.price : service.price,
-          services: cart.services
-            ? [...cart.services, { ...service }]
-            : [
-                {
-                  id: service._id,
-                  title: service.title,
-                  price: service.price,
-                  localImageName: service.localImageName,
-                  timeToComplete: service.timeToComplete,
-                  answeredQuestions: service.answeredQuestions,
-                },
-              ],
-        };
-
-        setCart(updatedCart);
-        setCartResponse("Item added to cart");
-      }
-      localStorage.setItem("Cart", JSON.stringify(cart));
-      setCartLength(cart?.services?.length);
-    }
-
-    if (!isGuest) {
+    try {
       const response = await axios.post(
-        "http://45.74.32.213:4000/api/cart",
+        "https://ramsaysdetailing.ca:4000/api/cart",
         {
-          service: {
-            title: service.title,
-            price: service.price,
-            answeredQuestions: service.answeredQuestions,
-          },
+          service,
         },
         {
           withCredentials: true,
@@ -130,77 +96,91 @@ function CartContextProvider(props) {
         console.log("Item added to cart: ", data);
         setCart(data);
         setCartResponse("Item added to cart");
-        setCartLength(data.services.length);
+        console.log(cartLength + 1);
+        setCartLength(cartLength + 1);
       } else {
         console.error("failed to add item to cart: ", response);
       }
+    } catch (error) {
+      console.log(error);
     }
-    setCartLength(cart?.services?.length);
   }
 
   async function removeFromCartContext(service) {
     if (!cart) {
       return; // No items in the cart, nothing to remove
     }
-    if (isGuest === false) {
-      const response = await axios.delete("http://45.74.32.213:4000/api/cart", {
-        withCredentials: true,
-        headers: {
-          "Content-Type": "application/json",
-        },
-        data: {
-          _id: service._id,
-        },
-      });
+    try {
+      const response = await axios.delete(
+        "https://ramsaysdetailing.ca:4000/api/cart",
+        {
+          withCredentials: true,
+          headers: {
+            "Content-Type": "application/json",
+          },
+          data: {
+            _id: service._id,
+          },
+        }
+      );
 
-      if (response.ok) {
+      if (response.status === 200) {
         const data = response.data;
         console.log("Item removed from cart: ", data);
-
+        setCart(data);
         setCartLength(cartLength - 1);
       } else {
         console.error("failed to remove item from cart: ", response);
       }
-    }
-
-    // Find the index of the service to be removed in the cart
-    const index = cart.services.findIndex(
-      (item) => item.title === service.title
-    );
-
-    if (index !== -1) {
-      const removedService = cart.services[index];
-      cart.price -= removedService.price;
-      cart.services.splice(index, 1); // Remove the service from the cart
-      setCart({ ...cart }); // Update the cart state
-    }
-
-    if (isGuest) {
-      localStorage.removeItem("Cart");
-      localStorage.setItem("Cart", JSON.stringify(cart));
+    } catch (error) {
+      console.log(error);
     }
   }
 
-  async function clearStoredCart() {
-    localStorage.removeItem("Cart");
-    setCart({});
-    setCartLength(0);
-  }
+  const clearCartContext = async () => {
+    if (!cart) {
+      return; // No items in the cart, nothing to remove
+    }
+    try {
+      const response = await axios.delete(
+        "https://ramsaysdetailing.ca:4000/api/cart/clear",
+        {
+          withCredentials: true,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.status === 200) {
+        const data = response.data;
+        console.log("Cart Cleared");
+        setCart(data);
+        setCartLength(0);
+      } else {
+        console.error("failed to clear cart: ", response);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   return (
     <CartContext.Provider
       value={{
-        selectedDateTimes,
-        setSelectedDateTimes,
+        selectedDateTime,
+        setSelectedDateTime,
         fetchBusyTimes,
         busyTimes,
         cart,
         cartLength,
         cartContextResponse,
+        setCartResponse,
         getCart,
         addToCartContext,
         removeFromCartContext,
-        clearStoredCart,
+        clearCartContext,
+        setBusyTimes,
       }}
     >
       {props.children}

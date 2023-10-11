@@ -20,14 +20,14 @@ const Home = () => {
           <a href="tel:+16137692098" className="flex items-center gap-1">
             <img
               alt="phone"
-              src="http://45.74.32.213:4000/images/phone.png"
+              src="https://ramsaysdetailing.ca:4000/images/phone.png"
               className="mt-[3px] max-h-6"
             />
             <strong className="font-sans text-2xl">613-769-2098</strong>
           </a>
         </div>
         <Link
-          to="/services"
+          to="https://ramsaysdetailing.ca/services"
           className="rounded-full border px-10 py-2 text-lg transition-all duration-500 hover:bg-white hover:text-black"
         >
           Services

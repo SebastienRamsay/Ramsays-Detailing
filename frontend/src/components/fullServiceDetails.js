@@ -1,19 +1,25 @@
+import { faPencilAlt } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { useContext, useState } from "react";
 import "react-datepicker/dist/react-datepicker.css";
+import { Link } from "react-router-dom";
+import AuthContext from "../context/AuthContext";
 import CartContext from "../context/CartContext";
 
 const FullServiceDetails = ({ service }) => {
-  const imageDirectory = "http://45.74.32.213:4000/images/";
+  const imageDirectory = "https://ramsaysdetailing.ca:4000/images/";
 
   const imagePath = imageDirectory + service.localImageName;
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
 
-  var [answeredQuestions] = useState([]);
-  var [price, setPrice] = useState(0);
-  var [cartResponse, setCartResponse] = useState("");
-  const { addToCartContext, cartContextResponse } = useContext(CartContext);
-  var [additionalQuestions, setAdditionalQuestions] = useState([]);
+  const [editMode, setEditMode] = useState(false);
+  const [answeredQuestions] = useState([]);
+  const [price, setPrice] = useState(0);
+  const { addToCartContext, cartContextResponse, setCartResponse } =
+    useContext(CartContext);
+  const { loggedIn, isAdmin } = useContext(AuthContext);
+  const [additionalQuestions, setAdditionalQuestions] = useState([]);
 
   function calculatePrice({
     questionobj,
@@ -21,9 +27,11 @@ const FullServiceDetails = ({ service }) => {
     answer,
     answer_id,
     costIncreaseString,
+    costDecrease,
   }) {
     var costIncrease = parseInt(costIncreaseString);
-    var currentPrice = price;
+    var currentPrice = price - costDecrease;
+
     const answeredQuestion = answeredQuestions.find(
       (answeredQuestion) => answeredQuestion.question === question
     );
@@ -40,6 +48,7 @@ const FullServiceDetails = ({ service }) => {
       if (costIncrease !== "" && costIncrease !== undefined && costIncrease) {
         currentPrice += costIncrease;
       }
+
       answeredQuestion.costIncrease = costIncrease;
       answeredQuestion.answer = answer;
       answeredQuestion.answer_id = answer_id;
@@ -71,7 +80,6 @@ const FullServiceDetails = ({ service }) => {
         question_id: questionobj._id,
       });
     }
-
     setPrice(currentPrice);
     setCartResponse("");
   }
@@ -87,7 +95,6 @@ const FullServiceDetails = ({ service }) => {
         service.answeredQuestions = answeredQuestions;
 
         addToCartContext(service);
-        setCartResponse(cartContextResponse);
       } else {
         setCartResponse("Please Answer All Of The Questions.");
       }
@@ -102,15 +109,15 @@ const FullServiceDetails = ({ service }) => {
     const selectedOption = target.options[selectedIndex];
     const answer_id = selectedOption.getAttribute("_id");
     const selectedAnswer = selectedOption.getAttribute("answer");
-    console.log(question._id);
     var questionAlreadyAnswered = answeredQuestions.find(
       (answeredQuestion) => answeredQuestion.question_id === question._id
     );
-    console.log("a", answeredQuestions);
+    var costDecrease = 0;
 
     if (questionAlreadyAnswered !== undefined) {
       const additionalQuestionsToRemove =
         questionAlreadyAnswered.additionalQuestions || [];
+
       setAdditionalQuestions((prevAdditionalQuestions) =>
         prevAdditionalQuestions.filter(
           (question) => !additionalQuestionsToRemove.includes(question)
@@ -127,15 +134,22 @@ const FullServiceDetails = ({ service }) => {
             questionAlreadyAnswered.additionalQuestions[i]._id
         );
 
+        const costToRemove = answeredQuestions.filter(
+          (answeredQuestion) =>
+            answeredQuestion.question_id ===
+            questionAlreadyAnswered.additionalQuestions[i]._id
+        )[0]?.costIncrease;
+
+        if (costToRemove > 0 && Number.isInteger(costToRemove)) {
+          console.log(costDecrease, costToRemove);
+          costDecrease += costToRemove;
+          console.log(costDecrease);
+        }
+
         if (indexToRemove !== -1) {
-          console.log("i", indexToRemove);
-          console.log(additionalQuestionsToRemove);
-          console.log("b", answeredQuestions);
           answeredQuestions.splice(indexToRemove, 1);
         }
       }
-
-      console.log("f", answeredQuestions);
     }
 
     calculatePrice({
@@ -144,6 +158,7 @@ const FullServiceDetails = ({ service }) => {
       answer: selectedAnswer,
       answer_id: answer_id,
       costIncreaseString: target.value,
+      costDecrease,
     });
 
     setAdditionalQuestions((prevAdditionalQuestions) => [
@@ -157,9 +172,19 @@ const FullServiceDetails = ({ service }) => {
   const additionalQuestionsHTML = additionalQuestions.map(
     (additionalQuestion) => (
       <div key={additionalQuestion.question} className="mt-6">
-        <h4 className="text-lg">{additionalQuestion.question}</h4>
+        <span className="relative mb-1 flex flex-row">
+          <h4 className="text-lg">{additionalQuestion.question}</h4>
+          <span className="group">
+            <h4 className="absolute right-0 border-spacing-3 cursor-help rounded-full border-2 border-ramsayBlue-0 px-2">
+              ?
+            </h4>
+            <span className="absolute left-0 top-8 hidden w-56 rounded-xl bg-ramsayBlue-0 py-2 transition-all duration-500 group-hover:block">
+              <p className="px-2">{additionalQuestion.description}</p>
+            </span>
+          </span>
+        </span>
         <select
-          className="h-8 w-52 rounded-md text-black"
+          className="h-8 w-56 rounded-md text-black"
           key={additionalQuestion.question}
           _id={additionalQuestion._id}
           id="additionalQuestion"
@@ -189,63 +214,166 @@ const FullServiceDetails = ({ service }) => {
         <img
           src={imagePath}
           alt={service.title + " Image"}
-          className="mt-10 lg:h-xl"
+          className="mt-10 md:h-xl"
         />
       </span>
 
-      <div className="mx-10 flex flex-col md:flex-row lg:gap-80">
-        <div className="mt-16">
+      <div className="flex flex-col gap-10 sm:mr-10 sm:flex-row md:mr-0 md:gap-32">
+        <div className="mx-10 mt-16">
           <h4 className="title mb-5 text-2xl font-bold">{service.title}</h4>
           <p className="max-w-md">{service.description}</p>
         </div>
 
-        <div className="mt-10 flex flex-col items-center font-sans">
+        <div className="relative mt-10 flex flex-col items-center font-sans">
           <>
+            {isAdmin && (
+              <>
+                <button
+                  onClick={() => {
+                    setEditMode(!editMode);
+                  }}
+                  className="absolute right-5 sm:right-0"
+                >
+                  <FontAwesomeIcon icon={faPencilAlt} size="2xl sm:lg" />
+                </button>
+              </>
+            )}
+
             {service.questions &&
               service.questions.map((question) => (
-                <div key={question._id} className="mt-6">
-                  <h4 className="text-lg">{question.question}</h4>
-                  <select
-                    className="h-8 w-52 rounded-md text-black"
-                    key={question.question}
-                    id="questions"
-                    onChange={(e) => handleQuestionChange(question, e.target)}
-                  >
-                    <option value={0} key={0}>
-                      Select
-                    </option>
-                    {question.answers &&
-                      question.answers.map((answer) => (
-                        <option
-                          key={answer.answer}
-                          value={answer.costIncrease}
-                          _id={answer._id}
-                          answer={answer.answer}
-                        >
-                          {answer.answer}
+                <div key={question._id} className="mt-8">
+                  {!editMode ? (
+                    <>
+                      <span className="relative mb-1 flex flex-row">
+                        <h4 className="text-lg">{question.question}</h4>
+                        <span className="group">
+                          <h4 className="absolute right-0 border-spacing-3 cursor-help rounded-full border-2 border-ramsayBlue-0 px-2">
+                            ?
+                          </h4>
+                          <span className="absolute left-0 top-8 hidden w-56 rounded-xl bg-ramsayBlue-0 py-2 transition-all duration-500 group-hover:block">
+                            <p className="px-2">{question.description}</p>
+                          </span>
+                        </span>
+                      </span>
+
+                      <select
+                        className="h-8 w-56 rounded-md text-black"
+                        key={question.question}
+                        id="questions"
+                        onChange={(e) =>
+                          handleQuestionChange(question, e.target)
+                        }
+                      >
+                        <option value={0} key={0}>
+                          Select
                         </option>
-                      ))}
-                  </select>
+                        {question.answers &&
+                          question.answers.map((answer) => (
+                            <option
+                              key={answer.answer}
+                              value={answer.costIncrease}
+                              _id={answer._id}
+                              answer={answer.answer}
+                            >
+                              {answer.answer}
+                            </option>
+                          ))}
+                      </select>
+                    </>
+                  ) : (
+                    <>
+                      <span className="flex flex-col gap-3 sm:flex-row">
+                        <span>
+                          <h4 className="mr-1 text-lg">Question:</h4>
+                          <input
+                            className="h-8 w-64 rounded-md font-sans text-black"
+                            value={question.question}
+                          ></input>
+                          <h4 className="mr-1 text-lg">Description:</h4>
+                          <textarea
+                            value={question.description}
+                            className="h-20"
+                            maxLength={65}
+                            rows={3} // You can adjust the number of rows as needed
+                          ></textarea>
+                        </span>
+
+                        <span>
+                          {question.answers &&
+                            question.answers.map((answer) => (
+                              <>
+                                <h4 className="mr-1 text-lg">Awnser:</h4>
+                                <input
+                                  className="h-8 w-64 rounded-md font-sans text-black"
+                                  value={answer.answer}
+                                ></input>
+                                <h4 className="mr-1 text-lg">Cost Increase:</h4>
+                                <input
+                                  className="h-8 w-64 rounded-md font-sans text-black"
+                                  value={answer.costIncrease}
+                                ></input>
+                              </>
+                            ))}
+                        </span>
+                      </span>
+                    </>
+                  )}
                 </div>
               ))}
             {additionalQuestionsHTML}
           </>
-
+          {!loggedIn && (
+            <div className="mt-10 flex flex-col items-center gap-5 font-sans">
+              <Link to="https://ramsaysdetailing.ca:4000/auth/google">
+                <button className="mt-3 flex items-center rounded-full bg-ramsayBlue-0 p-2 hover:bg-ramsayBlueHover-0">
+                  <img
+                    src="https://ramsaysdetailing.ca:4000/images/google.png"
+                    alt="google"
+                    className="h-auto w-9 rounded-full sm:w-8"
+                  />
+                  <span className="text-bold mx-2 font-bold">
+                    Sign in with Google
+                  </span>
+                </button>
+              </Link>
+              <h1 className="w-64 text-center">
+                Please Sign In With Google To Add Services To Your Cart
+              </h1>
+            </div>
+          )}
           {service.questions.length + additionalQuestions.length ===
           answeredQuestions.length ? (
             <>
               <p className="mt-8 text-lg">
                 <strong>${price}</strong>
               </p>
-              <button
-                onClick={addToCart}
-                className="button mt-3 bg-green-700 transition-all duration-500 hover:bg-green-800"
-              >
-                Add To Cart
-              </button>
+              {loggedIn && (
+                <button
+                  onClick={addToCart}
+                  className="button mt-3 bg-green-700 transition-all duration-500 hover:bg-green-800"
+                >
+                  Add To Cart
+                </button>
+              )}
               <p className="text-md mt-4 text-green-600 md:text-lg lg:text-xl">
-                {cartResponse}
+                {cartContextResponse}
               </p>
+              {cartContextResponse === "Item added to cart" && (
+                <div className="mt-3 flex flex-row gap-3">
+                  <Link
+                    to="https://ramsaysdetailing.ca/services"
+                    className="button bg-green-700 transition-all duration-500 hover:bg-green-800"
+                  >
+                    Continue Shopping
+                  </Link>
+                  <Link
+                    to="https://ramsaysdetailing.ca/cart"
+                    className="button bg-ramsayBlueHover-0 transition-all duration-500 hover:bg-blue-800"
+                  >
+                    Cart
+                  </Link>
+                </div>
+              )}
             </>
           ) : (
             <p></p>

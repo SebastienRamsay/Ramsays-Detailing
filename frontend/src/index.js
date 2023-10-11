@@ -2,8 +2,8 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import { AuthContextProvider } from "./context/AuthContext";
+import { BookingsContextProvider } from "./context/BookingsContext";
 import { CartContextProvider } from "./context/CartContext";
-import { NavbarContextProvider } from "./context/NavbarContext";
 import { ServicesContextProvider } from "./context/ServicesContext";
 import "./index.css";
 
@@ -13,9 +13,9 @@ root.render(
     <ServicesContextProvider>
       <AuthContextProvider>
         <CartContextProvider>
-          <NavbarContextProvider>
+          <BookingsContextProvider>
             <App />
-          </NavbarContextProvider>
+          </BookingsContextProvider>
         </CartContextProvider>
       </AuthContextProvider>
     </ServicesContextProvider>

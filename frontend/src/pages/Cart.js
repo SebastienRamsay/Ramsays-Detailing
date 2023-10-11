@@ -1,52 +1,103 @@
 import axios from "axios";
 import { useCallback, useContext, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import DateTimePicker from "../components/DateTimePicker";
+import AuthContext from "../context/AuthContext";
+import BookingsContext from "../context/BookingsContext";
 import CartContext from "../context/CartContext";
 
 const Cart = () => {
-  const imageDirectory = "http://45.74.32.213:4000/images/";
+  const navigate = useNavigate();
+  const imageDirectory = "https://ramsaysdetailing.ca:4000/images/";
 
   const {
     cart,
     removeFromCartContext,
-    selectedDateTimes,
-    setSelectedDateTimes,
+    selectedDateTime,
+    setSelectedDateTime,
     fetchBusyTimes,
+    clearCartContext,
+    setBusyTimes,
   } = useContext(CartContext);
+  const { fetchBookings, bookings } = useContext(BookingsContext);
+
+  const { isEmployee } = useContext(AuthContext);
 
   var [address, setAddress] = useState("");
   // var [addressValid, setAddressValid] = useState(true);
   var [addressSuggestions, setAddressSuggestions] = useState([]);
-  const [bookingResponse, setBookingResponse] = useState(null);
+  const [bookingError, setBookingError] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState(null);
+  const [isChecked, setIsChecked] = useState(false); // Create state variable
+
+  function isValidPhoneNumber(phoneNumber) {
+    if (
+      phoneNumber !== null &&
+      phoneNumber !== undefined &&
+      phoneNumber.length > 9
+    ) {
+      // Remove any non-digit characters from the input
+      const cleanedPhoneNumber = phoneNumber.replace(/\D/g, "");
+
+      // Check if the phone number has the correct length (e.g., 10 digits for a US number)
+      const isValidLength = cleanedPhoneNumber.length === 10;
+
+      // Check if the phone number consists of only digits
+      const hasOnlyDigits = /^\d+$/.test(cleanedPhoneNumber);
+
+      return isValidLength && hasOnlyDigits;
+    } else {
+      return false;
+    }
+  }
 
   async function createCalendarEvent() {
-    setBookingResponse("");
-    let answeredQuestions = "";
-    let summary = "";
-    let description = "";
-    cart.services.forEach((service) => {
-      service.answeredQuestions.forEach((answeredQuestion) => {
-        answeredQuestions += `${answeredQuestion.question}: ${answeredQuestion.answer}\nCost Increase: $${answeredQuestion.costIncrease}\n`;
-      });
-      summary += `${service.title}: $${service.price} `;
-      description += `${service.title}: $${service.price}\n${answeredQuestions}\n`;
+    setBookingError("");
+
+    if (!isValidPhoneNumber(phoneNumber)) {
+      setBookingError("Please Enter A Valid Phone Number");
+      return;
+    }
+
+    if (address === "") {
+      setBookingError("Please Enter A Valid Address");
+      return;
+    }
+
+    if (!selectedDateTime) {
+      setBookingError("Please Pick A Date And Time");
+      return;
+    }
+    var numberOfUnClaimedBookings = 0;
+    const maxUnClaimedBookings = 1;
+    bookings.map((booking) => {
+      if (booking.employeeId === "none") {
+        numberOfUnClaimedBookings++;
+      }
+      return booking;
     });
-    var startTime =
-      selectedDateTimes.length > 0 ? selectedDateTimes[0].dateTime : null;
-    var endTime = new Date(startTime);
-    endTime.setHours(endTime.getHours() + 5);
-    console.log(startTime, endTime);
-    console.log("summary:" + summary);
-    console.log("description:" + description);
+
+    if (numberOfUnClaimedBookings >= maxUnClaimedBookings) {
+      setBookingError(
+        "Too Many Un-Claimed Bookings, Wait Until Your Previous Booking Has Been Claimed By An Employee"
+      );
+      return;
+    }
+
+    if (isEmployee) {
+      setBookingError("Employees Cannot Create Bookings");
+      return;
+    }
+
     try {
-      const response = await axios.post(
-        "/Calendar",
+      cart.phoneNumber = phoneNumber;
+      cart.address = address;
+      console.log(selectedDateTime);
+      const bookingResponse = await axios.post(
+        "https://ramsaysdetailing.ca:4000/api/bookings",
         {
-          summary: summary,
-          location: address,
-          description: description,
-          startTime: startTime,
-          endTime: endTime,
+          cart,
+          selectedDateTime,
         },
         {
           withCredentials: true, // Include cookies in the request
@@ -55,24 +106,51 @@ const Cart = () => {
           },
         }
       );
-      if (response.status === 200) {
-        const data = response.data;
-        console.log("Calendar event created successfully:", data);
-        if (data === "User is busy") {
-          setBookingResponse(
-            "Booking Complete. There is already an event in your calendar for this time."
+      const bookingData = bookingResponse.data;
+      if (bookingResponse.status === 200) {
+        const bookingData = bookingResponse.data;
+        if (isChecked) {
+          const calendarResponse = await axios.post(
+            "https://ramsaysdetailing.ca:4000/calendar",
+            {
+              cart,
+              selectedDateTime,
+            },
+            {
+              withCredentials: true, // Include cookies in the request
+              headers: {
+                "Content-Type": "application/json",
+              },
+            }
           );
+          const calendarData = calendarResponse.data;
+
+          if (calendarResponse.status === 200) {
+            await axios.patch(
+              "https://ramsaysdetailing.ca:4000/api/bookings/setUserEventID",
+              {
+                userEventId: calendarData,
+                bookingId: bookingData._id,
+              },
+              {
+                withCredentials: true, // Include cookies in the request
+                headers: {
+                  "Content-Type": "application/json",
+                },
+              }
+            );
+          } else {
+            console.log(calendarData);
+          }
         }
-        if (data === "Ramsays Detailing is busy") {
-          setBookingResponse("Booking Failed. Pick another day or time.");
-        }
-        if (data === "Events created in calendar") {
-          setBookingResponse("Booking Complete. Check your Google Calendar.");
-        }
-        fetchBusyTimes();
+        setSelectedDateTime(undefined);
+        clearCartContext();
+        fetchBookings();
+        setBusyTimes(undefined);
+        navigate("https://ramsaysdetailing.ca/bookings");
       } else {
-        console.error("Failed to create calendar event:", response.status);
-        setBookingResponse("Booking Failed: " + response.data);
+        console.error(bookingData);
+        setBookingError(bookingData);
       }
     } catch (error) {
       console.error("Error occurred while creating calendar event:", error);
@@ -82,11 +160,22 @@ const Cart = () => {
   const handleSuggestionClick = (suggestion) => {
     setAddress(suggestion);
     setAddressSuggestions([]);
+    console.log(cart);
+    fetchBusyTimes({
+      customerLocation: suggestion,
+      expectedTimeToComplete: cart.timeToComplete,
+      serviceName: cart.services[0].title,
+    });
   };
 
   const handleAddressSuggestions = useCallback(async (e) => {
     const inputAddress = e.target.value;
     setAddress(inputAddress);
+
+    if (inputAddress.length < 5) {
+      setAddressSuggestions([]);
+      return;
+    }
 
     if (inputAddress.trim() === "") {
       setAddressSuggestions([]);
@@ -95,9 +184,15 @@ const Cart = () => {
 
     try {
       const response = await fetch(
-        `http://45.74.32.213:4000/places/autocomplete?input=${encodeURIComponent(
+        `https://ramsaysdetailing.ca:4000/places/autocomplete?input=${encodeURIComponent(
           inputAddress
-        )}`
+        )}`,
+        {
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
       );
 
       if (response.status === 200) {
@@ -138,7 +233,7 @@ const Cart = () => {
   const handleAddressChange = useCallback(async (e) => {
     setAddress(e.target.value);
     // const isValid = await confirmAddressExists(address);
-    // setAddressValid(isValid);
+    // setAddressValid(isValid);``
   }, []);
   // async function confirmAddressExists(address) {
   //   try {
@@ -160,26 +255,10 @@ const Cart = () => {
   //   }
   // }
 
-  async function removeFromCart(service, index) {
-    try {
-      removeFromCartContext(service);
-      var dateTimes = selectedDateTimes;
-      const datePreviouslySelected = dateTimes.findIndex(
-        (selectedDateTime) => selectedDateTime.id === index
-      );
-      if (datePreviouslySelected) {
-        dateTimes.splice(datePreviouslySelected, 1);
-        setSelectedDateTimes(dateTimes);
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  }
-
   try {
     if (cart.services.length > 0) {
       return (
-        <div className="mx-10 flex flex-col items-center justify-center gap-10 py-10 xl:flex-row">
+        <div className="mx-10 flex flex-col items-center justify-center gap-10 py-10">
           <div className="rounded-lg bg-primary-0 p-8 pb-16 text-center md:p-10">
             <div
               className={
@@ -217,9 +296,9 @@ const Cart = () => {
                           </div>
                         )
                       )}
-                    <DateTimePicker service={service} index={index} />
+
                     <button
-                      onClick={() => removeFromCart(service, index)}
+                      onClick={() => removeFromCartContext(service)}
                       className="button mt-3 bg-red-600 transition-all duration-500 hover:bg-red-700"
                     >
                       Remove
@@ -235,15 +314,15 @@ const Cart = () => {
           </div>
 
           <div className="mx-10 flex max-w-fit flex-col items-center gap-3 rounded-lg bg-primary-0 p-10">
-            <div className="flex flex-col items-center md:flex-row md:gap-10">
+            <div className="flex flex-col gap-5 md:flex-row md:gap-10">
               <div className="relative">
                 <input
                   type="text"
-                  placeholder="Enter address"
+                  placeholder=" Address"
                   value={address || ""}
                   onChange={handleAddressChange}
                   onKeyUp={handleAddressSuggestions}
-                  className=" mt-6 h-8 w-52 rounded-md font-sans text-black"
+                  className="h-8 w-64 rounded-md font-sans text-black"
                 />
                 {addressSuggestions.length > 0 && (
                   <div className="top-15 absolute rounded-lg bg-primary-0">
@@ -259,11 +338,33 @@ const Cart = () => {
                   </div>
                 )}
               </div>
+              <div>
+                <input
+                  type="text"
+                  placeholder=" Phone Number"
+                  value={phoneNumber || ""}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  className="h-8 w-64 rounded-md font-sans text-black"
+                />
+              </div>
+              <DateTimePicker />
+
+              <div className="flex flex-row gap-3 font-sans">
+                <input
+                  type="checkbox"
+                  className="w-4"
+                  checked={isChecked} // Attach state to the checkbox
+                  onChange={(e) => setIsChecked(e.target.checked)} // Update state when checkbox is clicked
+                />
+                <h1>Add Booking To My Calendar</h1>
+              </div>
             </div>
 
-            <div className="mt-5 flex flex-row">
-              <h1 key="price">Total Cost: $</h1>
-              <h1 className="font-sans">{cart.price}</h1>
+            <div className="mt-8 flex flex-row">
+              <h1 key="price" className="mt-[2px]">
+                Total Cost:{" "}
+              </h1>
+              <h1 className="ml-2 font-sans text-lg">${cart.price}</h1>
             </div>
             <button
               className="button mt-3 bg-ramsayBlue-0 transition-all duration-500 hover:bg-blue-800"
@@ -271,7 +372,7 @@ const Cart = () => {
             >
               Book Detailing
             </button>
-            <p>{bookingResponse}</p>
+            <p>{bookingError}</p>
           </div>
         </div>
       );

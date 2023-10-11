@@ -22,13 +22,13 @@ const About = () => {
             <strong className="font-sans text-2xl">613-769-2098</strong>
             <img
               alt="phone"
-              src="http://45.74.32.213:4000/images/phone.png"
+              src="https://ramsaysdetailing.ca:4000/images/phone.png"
               className="ml-3 max-h-6"
             />
           </a>
         </div>
         <Link
-          to="/services"
+          to="https://ramsaysdetailing.ca/services"
           className="rounded-full border px-10 py-2 text-lg hover:border-2 hover:font-bold"
         >
           Services

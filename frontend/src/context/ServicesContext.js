@@ -1,29 +1,36 @@
 import axios from "axios";
-import React, { createContext, useEffect, useState } from "react"
+import React, { createContext, useEffect, useState } from "react";
 
-const ServicesContext = createContext()
+const ServicesContext = createContext();
 
-function ServicesContextProvider(props){
-  const [services, setServices] = useState(undefined)
+function ServicesContextProvider(props) {
+  const [services, setServices] = useState(undefined);
 
-  async function getServices() { 
+  async function getServices() {
     try {
-      const response = await axios.get('http://45.74.32.213:4000/api/services', { withCredentials: true });
+      const response = await axios.get(
+        "https://ramsaysdetailing.ca:4000/api/services",
+        {
+          withCredentials: true,
+        }
+      );
       setServices(response.data);
     } catch (error) {
-      console.error('Error fetching services:', error);
+      console.error("Error fetching services:", error);
     }
   }
 
   useEffect(() => {
-    getServices()
-  }, [])
+    getServices();
+  }, []);
 
-  return <ServicesContext.Provider value={{services, getServices}}>
-    {props.children}
-  </ServicesContext.Provider>
+  return (
+    <ServicesContext.Provider value={{ services, getServices }}>
+      {props.children}
+    </ServicesContext.Provider>
+  );
 }
 
-export default ServicesContext
+export default ServicesContext;
 
-export { ServicesContextProvider }
+export { ServicesContextProvider };

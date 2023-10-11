@@ -9,16 +9,19 @@ const Story = () => {
             <b>THE STORY OF RAMSAY'S DETAILING</b>
           </h1>
           <p className="text-sm leading-5 md:text-lg md:leading-9 lg:px-8">
-            Ramsay's Detailing is an idea that popped into my head one day.
-            After working at a detailing shop for a few months I figured I could
-            start something of my own. I started watching YouTube videos on how
-            to properly deep clean the interior and exterior of vehicles and
-            created my dream job. At Ramsay's Detailing we are dedicated to
-            ensure our customers satisfaction. Your vehicle is important to us,
-            we want to ensure both you and your vehicle are happy. We offer top
-            of the line services at unbeatable prices. Please be sure to get in
-            touch if you have any questions about the business or the services
-            we provide.
+            Ramsay's Detailing is a buisness built around the customers needs.
+            Logging in with google not only lets us keep track of your bookings
+            but it also allows us to make an event in your calendar to remind
+            you about your booking. We have a built in online payment system to
+            allow users to securly make transcations. The customer is not
+            expected to pay until after the job is complete. On top of this we
+            also integrated a before and after system to allow you to see the
+            amazing results on our services. At Ramsay's Detailing we are
+            dedicated to ensure our customers satisfaction. Your vehicle is
+            important to us, we want to ensure both you and your vehicle are
+            happy. We offer top of the line services at unbeatable prices.
+            Please be sure to get in touch if you have any questions about the
+            business or the services we provide.
           </p>
           <div className="mt-5 text-sm sm:mt-10 ">
             <Link
@@ -37,7 +40,7 @@ const Story = () => {
         </div>
         <span className="object-scale-down">
           <img
-            src="http://45.74.32.213:4000/images/wipedown.png"
+            src="https://ramsaysdetailing.ca:4000/images/wipedown.png"
             alt="wipedown"
             className=""
           />

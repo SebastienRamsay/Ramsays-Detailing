@@ -29,11 +29,9 @@ const answerSchema = new Schema({
             },
           },
         ],
-        required: false,
       },
     ],
     default: undefined,
-    required: false,
   },
 });
 
@@ -69,7 +67,6 @@ const serviceSchema = new Schema(
     },
     questions: {
       type: [questionSchema],
-      required: false,
     },
   },
   { timestamps: true }

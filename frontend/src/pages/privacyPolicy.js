@@ -1,3 +1,5 @@
+import { Link } from "react";
+
 const PrivacyPolicy = () => {
   return (
     <div className="mx-3 flex flex-col gap-5 bg-gray-400 p-2 py-10 text-black sm:mx-20 md:mx-32">

@@ -51,7 +51,21 @@ const PrivacyPolicy = () => {
         data beyond the scope of the features provided by our App.
       </p>
 
-      <h2>3. How We Use Your Information</h2>
+      <h2>3. Limited Use Requirements</h2>
+      <p>
+        In compliance with Google's Limited Use Requirements, we want to inform
+        our users that our app strictly adheres to the Google API Services User
+        Data Policy, including the Limited Use requirements. For more details,
+        please refer to the{" "}
+        <Link href="https://developers.google.com/terms/api-services-user-data-policy">
+          Google API Services User Data Policy
+        </Link>
+        . Your privacy and data security are important to us, and we are
+        committed to ensuring your information is handled with care and in
+        accordance with these guidelines.
+      </p>
+
+      <h2>4. How We Use Your Information</h2>
 
       <p>We use the information we collect or receive:</p>
       <ul>
@@ -68,14 +82,14 @@ const PrivacyPolicy = () => {
         <li>To fulfill any other purpose for which you provide it.</li>
       </ul>
 
-      <h2>4. Your Privacy Choices</h2>
+      <h2>5. Your Privacy Choices</h2>
 
       <p>
         You may review, change, or remove the permissions granted to our App in
         your Google account settings at any time.
       </p>
 
-      <h2>5. Security of Your Information</h2>
+      <h2>6. Security of Your Information</h2>
 
       <p>
         We take the security of your personal information seriously. We
@@ -84,7 +98,7 @@ const PrivacyPolicy = () => {
         destruction.
       </p>
 
-      <h2>6. Changes to this Privacy Policy</h2>
+      <h2>7. Changes to this Privacy Policy</h2>
 
       <p>
         We may update our privacy policy from time to time. Thus, you are
@@ -92,7 +106,7 @@ const PrivacyPolicy = () => {
         you of any changes by posting the new privacy policy on this page.
       </p>
 
-      <h2>7. Contact Us</h2>
+      <h2>8. Contact Us</h2>
 
       <p>
         If you have any questions or suggestions about our privacy policy, do

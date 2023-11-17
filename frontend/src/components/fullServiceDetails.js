@@ -5,6 +5,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import { Link } from "react-router-dom";
 import AuthContext from "../context/AuthContext";
 import CartContext from "../context/CartContext";
+import GoogleButton from "./googleButton";
 
 const FullServiceDetails = ({ service }) => {
   const imageDirectory = "https://ramsaysdetailing.ca:4000/images/";
@@ -324,18 +325,7 @@ const FullServiceDetails = ({ service }) => {
           </>
           {!loggedIn && (
             <div className="mt-10 flex flex-col items-center gap-5 font-sans">
-              <Link to="https://ramsaysdetailing.ca:4000/auth/google">
-                <button className="mt-3 flex items-center rounded-full bg-ramsayBlue-0 p-2 hover:bg-ramsayBlueHover-0">
-                  <img
-                    src="https://ramsaysdetailing.ca:4000/images/google.png"
-                    alt="google"
-                    className="h-auto w-9 rounded-full sm:w-8"
-                  />
-                  <span className="text-bold mx-2 font-bold">
-                    Sign in with Google
-                  </span>
-                </button>
-              </Link>
+              <GoogleButton />
               <h1 className="w-64 text-center">
                 Please Sign In With Google To Add Services To Your Cart
               </h1>

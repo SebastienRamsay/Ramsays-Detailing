@@ -15,7 +15,7 @@ const Footer = () => {
           rel="noreferrer"
         >
           <img
-            src="https://ramsaysdetailing.ca:4000/images/instagram.png"
+            src="/images/instagram.png"
             alt="instagram"
             className="max-h-6"
           />
@@ -25,18 +25,10 @@ const Footer = () => {
           target="_blank"
           rel="noreferrer"
         >
-          <img
-            src="https://ramsaysdetailing.ca:4000/images/facebook.png"
-            alt="facebook"
-            className="max-h-10"
-          />
+          <img src="/images/facebook.png" alt="facebook" className="max-h-10" />
         </a>
         <a href="tel:+16137692098">
-          <img
-            src="https://ramsaysdetailing.ca:4000/images/phone.png"
-            alt="phone"
-            className="max-h-6"
-          />
+          <img src="/images/phone.png" alt="phone" className="max-h-6" />
         </a>
       </div>
       <div className="flex flex-row-reverse gap-3">

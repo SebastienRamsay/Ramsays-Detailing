@@ -23,7 +23,7 @@ function App() {
   const { loggedIn, isAdmin, isEmployee } = useContext(AuthContext);
 
   return (
-    <div className="app">
+    <div className="overflow-hidden">
       {loggedIn !== undefined ? (
         <BrowserRouter>
           <Navbar />

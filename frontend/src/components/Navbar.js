@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import AuthContext from "../context/AuthContext";
 import CartContext from "../context/CartContext";
 import LogOutBtn from "./LogOutBtn";
+import GoogleButton from "./googleButton";
 
 const Navbar = () => {
   const { loggedIn, displayName, profilePicture, isAdmin, isEmployee } =
@@ -38,7 +39,7 @@ const Navbar = () => {
         >
           <img
             className="w-[155px] nav:w-[240px] md:w-[275px]"
-            src="https://ramsaysdetailing.ca:4000/images/LOGO.png"
+            src="images/LOGO.png"
             alt="logo"
           />
           <h1 className="font-title text-[18px] font-bold italic text-white nav:text-[28px] md:text-[32px] ">
@@ -135,7 +136,7 @@ const Navbar = () => {
                       </h1>
                       <img
                         alt="cart"
-                        src="https://ramsaysdetailing.ca:4000/images/cart.png"
+                        src="images/cart.png"
                         className="max-h-11"
                       />
                     </Link>
@@ -146,7 +147,7 @@ const Navbar = () => {
                         rel="noreferrer"
                       >
                         <img
-                          src="https://ramsaysdetailing.ca:4000/images/instagram.png"
+                          src="images/instagram.png"
                           alt="instagram"
                           className="max-h-7"
                         />
@@ -157,14 +158,14 @@ const Navbar = () => {
                         rel="noreferrer"
                       >
                         <img
-                          src="https://ramsaysdetailing.ca:4000/images/facebook.png"
+                          src="images/facebook.png"
                           alt="facebook"
                           className="max-h-11"
                         />
                       </a>
                       <a href="tel:+16137692098" className="">
                         <img
-                          src="https://ramsaysdetailing.ca:4000/images/phone.png"
+                          src="images/phone.png"
                           alt="phone"
                           className="max-h-7"
                         />
@@ -175,9 +176,7 @@ const Navbar = () => {
                   <div className="mr-5 md:hidden">
                     <div className="w-10">
                       <img
-                        src={
-                          "https://ramsaysdetailing.ca:4000/images/MenuLogo.png"
-                        }
+                        src={"images/MenuLogo.png"}
                         alt="mobile nav"
                         onClick={() => setMobileNavOpen((prev) => !prev)}
                         className={
@@ -188,9 +187,7 @@ const Navbar = () => {
                         }
                       />
                       <img
-                        src={
-                          "https://ramsaysdetailing.ca:4000/images/MenuLogoX.png"
-                        }
+                        src={"images/MenuLogoX.png"}
                         alt="mobile nav"
                         onClick={() => setMobileNavOpen((prev) => !prev)}
                         className={
@@ -280,7 +277,7 @@ const Navbar = () => {
                           className="mt-[9px]"
                         >
                           <img
-                            src="https://ramsaysdetailing.ca:4000/images/instagram.png"
+                            src="images/instagram.png"
                             alt="instagram"
                             className="max-h-9"
                           />
@@ -292,14 +289,14 @@ const Navbar = () => {
                           className=""
                         >
                           <img
-                            src="https://ramsaysdetailing.ca:4000/images/facebook.png"
+                            src="images/facebook.png"
                             alt="facebook"
                             className="max-h-12"
                           />
                         </a>
                         <a href="tel:+16137692098" className="mt-2">
                           <img
-                            src="https://ramsaysdetailing.ca:4000/images/phone.png"
+                            src="images/phone.png"
                             alt="phone"
                             className="max-h-9"
                           />
@@ -315,9 +312,7 @@ const Navbar = () => {
                   <div className="mr-5 nav:hidden">
                     <div className="w-10">
                       <img
-                        src={
-                          "https://ramsaysdetailing.ca:4000/images/MenuLogo.png"
-                        }
+                        src={"images/MenuLogo.png"}
                         alt="mobile nav"
                         onClick={() => setMobileNavOpen((prev) => !prev)}
                         className={
@@ -328,9 +323,7 @@ const Navbar = () => {
                         }
                       />
                       <img
-                        src={
-                          "https://ramsaysdetailing.ca:4000/images/MenuLogoX.png"
-                        }
+                        src={"images/MenuLogoX.png"}
                         alt="mobile nav"
                         onClick={() => setMobileNavOpen((prev) => !prev)}
                         className={
@@ -406,7 +399,7 @@ const Navbar = () => {
                           className="mt-[9px]"
                         >
                           <img
-                            src="https://ramsaysdetailing.ca:4000/images/instagram.png"
+                            src="images/instagram.png"
                             alt="instagram"
                             className="max-h-9"
                           />
@@ -418,50 +411,26 @@ const Navbar = () => {
                           className=""
                         >
                           <img
-                            src="https://ramsaysdetailing.ca:4000/images/facebook.png"
+                            src="images/facebook.png"
                             alt="facebook"
                             className="max-h-12"
                           />
                         </a>
                         <a href="tel:+16137692098" className="mt-2">
                           <img
-                            src="https://ramsaysdetailing.ca:4000/images/phone.png"
+                            src="images/phone.png"
                             alt="phone"
                             className="max-h-9"
                           />
                         </a>
                       </div>
 
-                      <div className="mx-auto mt-5 block sm:hidden">
-                        <Link to="https://ramsaysdetailing.ca:4000/auth/google">
-                          <button className="flex items-center rounded-full border bg-ramsayBlue-0 p-2 text-white transition-all duration-500">
-                            <img
-                              src="https://ramsaysdetailing.ca:4000/images/google.png"
-                              alt="google"
-                              className="h-auto w-9 rounded-full sm:w-8"
-                            />
-                            <span className="text-bold mx-2 font-bold">
-                              Sign in with Google
-                            </span>
-                          </button>
-                        </Link>
-                      </div>
+                      <div className="mx-auto mt-5 block sm:hidden"></div>
                     </div>
                   </div>
                   <div className="mr-1 flex flex-row-reverse gap-7 nav:mr-5 nav:mt-[4.5px]">
                     <div className="hidden sm:block">
-                      <Link to="https://ramsaysdetailing.ca:4000/auth/google">
-                        <button className="flex w-full items-center rounded-full bg-ramsayBlue-0 p-2 hover:bg-ramsayBlueHover-0">
-                          <img
-                            src="https://ramsaysdetailing.ca:4000/images/google.png"
-                            alt="google"
-                            className="h-auto w-9 rounded-full sm:w-8"
-                          />
-                          <span className="text-bold mx-2 font-bold">
-                            Sign in with Google
-                          </span>
-                        </button>
-                      </Link>
+                      <GoogleButton />
                     </div>
                     <div className="hidden items-center gap-2 md:flex md:flex-row-reverse">
                       <a
@@ -470,7 +439,7 @@ const Navbar = () => {
                         rel="noreferrer"
                       >
                         <img
-                          src="https://ramsaysdetailing.ca:4000/images/instagram.png"
+                          src="images/instagram.png"
                           alt="instagram"
                           className="max-h-7"
                         />
@@ -481,14 +450,14 @@ const Navbar = () => {
                         rel="noreferrer"
                       >
                         <img
-                          src="https://ramsaysdetailing.ca:4000/images/facebook.png"
+                          src="images/facebook.png"
                           alt="facebook"
                           className="max-h-11"
                         />
                       </a>
                       <a href="tel:+16137692098" className="">
                         <img
-                          src="https://ramsaysdetailing.ca:4000/images/phone.png"
+                          src="images/phone.png"
                           alt="phone"
                           className="max-h-7"
                         />

@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import Story from "../components/Story";
+import InfoGlobe from "../components/InfoGlobe";
 
 const About = () => {
   return (
@@ -20,11 +21,7 @@ const About = () => {
         <div className="mb-8">
           <a href="tel:+16137692098" className="flex items-center">
             <strong className="font-sans text-2xl">613-769-2098</strong>
-            <img
-              alt="phone"
-              src="https://ramsaysdetailing.ca:4000/images/phone.png"
-              className="ml-3 max-h-6"
-            />
+            <img alt="phone" src="/images/phone.png" className="ml-3 max-h-6" />
           </a>
         </div>
         <Link
@@ -37,12 +34,14 @@ const About = () => {
 
       <Story />
 
-      <iframe
+      <InfoGlobe />
+
+      {/* <iframe
         className=" h-xl w-full border-0"
         src="https://www.google.com/maps/embed/v1/place?key=AIzaSyCnAcsDknQV6JTPNTYo8wUTnPR-yhEacZc&q=Ramsay's+Detailing+7536+Dwyer+Hill+Road,+Burritts+Rapids,+ON,+Canada"
         allowFullScreen
         title="Business Location"
-      ></iframe>
+      ></iframe> */}
     </div>
   );
 };

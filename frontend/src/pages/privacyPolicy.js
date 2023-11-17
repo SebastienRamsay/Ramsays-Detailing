@@ -1,5 +1,3 @@
-import { Link } from "react";
-
 const PrivacyPolicy = () => {
   return (
     <div className="mx-3 flex flex-col gap-5 bg-gray-400 p-2 py-10 text-black sm:mx-20 md:mx-32">
@@ -59,9 +57,12 @@ const PrivacyPolicy = () => {
         our users that our app strictly adheres to the Google API Services User
         Data Policy, including the Limited Use requirements. For more details,
         please refer to the{" "}
-        <Link href="https://developers.google.com/terms/api-services-user-data-policy">
+        <a
+          className="text-blue-700 underline"
+          href="https://developers.google.com/terms/api-services-user-data-policy"
+        >
           Google API Services User Data Policy
-        </Link>
+        </a>
         . Your privacy and data security are important to us, and we are
         committed to ensuring your information is handled with care and in
         accordance with these guidelines.

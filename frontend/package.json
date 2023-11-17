@@ -16,6 +16,7 @@
     "flatpickr": "^4.6.13",
     "font-awesome": "^4.7.0",
     "fs": "^0.0.1-security",
+    "gsap": "^3.12.2",
     "https": "^1.0.0",
     "luxon": "^3.4.1",
     "moment-timezone": "^0.5.43",
@@ -28,7 +29,8 @@
     "react-https-redirect": "^1.1.0",
     "react-router-dom": "^6.15.0",
     "react-scripts": "^5.0.1",
-    "sitemap": "^7.1.1"
+    "sitemap": "^7.1.1",
+    "three": "^0.158.0"
   },
   "scripts": {
     "start": "cross-env HTTPS=true SSL_CRT_FILE=../../ssl/domain.cert.pem SSL_KEY_FILE=../../ssl/private.key.pem PORT=1443 react-scripts start",

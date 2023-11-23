@@ -9,7 +9,6 @@ const AdminUserInfo = () => {
 
   useEffect(() => {
     setAdminInfo(adminUserInfo);
-    console.log("HEYYYYYYYYY");
   }, [adminUserInfo]);
 
   const updateEmployeeStatus = async (isEmployee, user) => {

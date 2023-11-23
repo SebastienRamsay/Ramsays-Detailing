@@ -1,6 +1,7 @@
 const User = require("../models/userModel");
 const jwt = require("jsonwebtoken");
 const { DateTime } = require("luxon");
+const { getCoordinatesFromAddress } = require("../utils/locationCache");
 
 const getUserInfo = async (req, res) => {
   try {
@@ -32,7 +33,13 @@ const requestUpdateEmployeeInfo = async (req, res) => {
     const { location, services, distance } = req.body;
 
     if (location) {
-      user.requestedLocation = location;
+      const signedLocation = jwt.sign(
+        {
+          location,
+        },
+        process.env.SECRET
+      );
+      user.requestedLocation = signedLocation;
     }
     if (services) {
       user.requestedServices = services;
@@ -68,7 +75,18 @@ const updateEmployeeInfo = async (req, res) => {
     const user = await User.findOne({ _id: userId });
 
     if (location) {
-      user.location = user.requestedLocation;
+      const decodedLocation = jwt.verify(
+        user.requestedLocation,
+        process.env.SECRET
+      ).location;
+      const coords = getCoordinatesFromAddress(decodedLocation);
+      const signedCoords = jwt.sign(
+        {
+          coords,
+        },
+        process.env.SECRET
+      );
+      user.location = signedCoords;
     }
 
     if (services) {
@@ -227,13 +245,14 @@ const getAllUserInfo = async (req, res) => {
     console.log(employees, users);
     const employeeData = [];
     employees.map((employee) => {
+      const coords = jwt.verify(user.location, process.env.SECRET).coords;
       employeeData.push({
         id: employee._id,
         profilePicture: employee.profilePicture,
         displayName: employee.displayName,
         email: employee.email,
         isEmployee: employee.isEmployee,
-        location: employee.location,
+        location: coords,
         distance: employee.distance,
         services: employee.services,
         requestedDistance: employee.requestedDistance,

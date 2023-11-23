@@ -13,6 +13,7 @@ const {
   isSunday,
   isMonday,
 } = require("date-fns");
+const { getCoordinatesFromAddress } = require("../utils/locationCache");
 
 const getAllBookingInfo = async (req, res) => {
   try {
@@ -38,28 +39,28 @@ const getAllBookingInfo = async (req, res) => {
   }
 };
 
-async function calculateDistance(origin, destination) {
-  try {
-    const response = await axios.get(
-      `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${encodeURIComponent(
-        origin
-      )}&destinations=${encodeURIComponent(destination)}&key=${
-        process.env.GOOGLE_API_KEY
-      }`
-    );
+function degreesToRadians(degrees) {
+  return degrees * (Math.PI / 180);
+}
+// takes two sets of coordinates and returns the distance
+// between them in kilometers using the Haversine formula
+function calculateDistance(coord1, coord2) {
+  const earthRadiusKm = 6371; // Radius of the Earth in kilometers
 
-    if (response.data.status === "OK") {
-      const distance = parseInt(
-        response.data.rows[0].elements[0].distance.text
-      );
-      console.log("distance:" + distance);
-      return distance;
-    } else {
-      throw new Error("Distance calculation failed");
-    }
-  } catch (error) {
-    throw error;
-  }
+  const dLat = degreesToRadians(coord2.latitude - coord1.latitude);
+  const dLon = degreesToRadians(coord2.longitude - coord1.longitude);
+
+  const lat1 = degreesToRadians(coord1.latitude);
+  const lat2 = degreesToRadians(coord2.latitude);
+
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.sin(dLon / 2) * Math.sin(dLon / 2) * Math.cos(lat1) * Math.cos(lat2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  const distance = earthRadiusKm * c;
+
+  return distance;
 }
 
 function isDateTimeInRange(dateTimeToCheck, rangeStart, rangeEnd) {
@@ -116,6 +117,7 @@ const busyEvents = async (req, res) => {
     const user_id = jwt.verify(token, process.env.SECRET).userID; //auth complete
 
     const { customerLocation, expectedTimeToComplete, serviceName } = req.body;
+    const customerCoords = getCoordinatesFromAddress(customerLocation);
     var validEmployees = [];
     var employees = await User.find({
       services: { $in: [serviceName] },
@@ -127,7 +129,7 @@ const busyEvents = async (req, res) => {
       employees.map(async (employee) => {
         const distance = await calculateDistance(
           employee.location,
-          customerLocation
+          customerCoords
         );
         if (distance <= employee.distance) {
           console.log("VALID EMPLOYEE");
@@ -427,6 +429,7 @@ const createBooking = async (req, res) => {
       return res.status(400).send("too many unclaimed bookings");
     }
     const { cart, selectedDateTime } = req.body;
+    const customerCoords = getCoordinatesFromAddress(cart.address);
     let answeredQuestions = "";
     let summary = "";
     let description = "";
@@ -446,7 +449,10 @@ const createBooking = async (req, res) => {
 
     // check distance between all admin and location variable within the admins set range
     const promises = employees.map(async (employee) => {
-      const distance = await calculateDistance(employee.location, cart.address);
+      const distance = await calculateDistance(
+        employee.location,
+        customerCoords
+      );
       if (distance <= employee.distance) {
         validEmployees.push(employee);
         console.log(distance, " <= ", employee.distance);
@@ -507,6 +513,7 @@ const createBooking = async (req, res) => {
       const date = DateTime.fromJSDate(jsDate).toISO();
       console.log("selectedDateTime", date);
       const user = await User.findOne({ _id: user_id });
+
       const newBooking = new Booking({
         userId: user_id,
         possibleemployeeIds: possibleemployeeIds,

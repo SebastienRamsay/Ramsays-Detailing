@@ -39,7 +39,7 @@ const Navbar = () => {
         >
           <img
             className="w-[155px] nav:w-[240px] md:w-[275px]"
-            src="images/LOGO.png"
+            src="/images/LOGO.png"
             alt="logo"
           />
           <h1 className="font-title text-[18px] font-bold italic text-white nav:text-[28px] md:text-[32px] ">
@@ -136,7 +136,7 @@ const Navbar = () => {
                       </h1>
                       <img
                         alt="cart"
-                        src="images/cart.png"
+                        src="/images/cart.png"
                         className="max-h-11"
                       />
                     </Link>
@@ -147,7 +147,7 @@ const Navbar = () => {
                         rel="noreferrer"
                       >
                         <img
-                          src="images/instagram.png"
+                          src="/images/instagram.png"
                           alt="instagram"
                           className="max-h-7"
                         />
@@ -158,14 +158,14 @@ const Navbar = () => {
                         rel="noreferrer"
                       >
                         <img
-                          src="images/facebook.png"
+                          src="/images/facebook.png"
                           alt="facebook"
                           className="max-h-11"
                         />
                       </a>
                       <a href="tel:+16137692098" className="">
                         <img
-                          src="images/phone.png"
+                          src="/images/phone.png"
                           alt="phone"
                           className="max-h-7"
                         />
@@ -176,7 +176,7 @@ const Navbar = () => {
                   <div className="mr-5 md:hidden">
                     <div className="w-10">
                       <img
-                        src={"images/MenuLogo.png"}
+                        src={"/images/MenuLogo.png"}
                         alt="mobile nav"
                         onClick={() => setMobileNavOpen((prev) => !prev)}
                         className={
@@ -187,7 +187,7 @@ const Navbar = () => {
                         }
                       />
                       <img
-                        src={"images/MenuLogoX.png"}
+                        src={"/images/MenuLogoX.png"}
                         alt="mobile nav"
                         onClick={() => setMobileNavOpen((prev) => !prev)}
                         className={
@@ -277,7 +277,7 @@ const Navbar = () => {
                           className="mt-[9px]"
                         >
                           <img
-                            src="images/instagram.png"
+                            src="/images/instagram.png"
                             alt="instagram"
                             className="max-h-9"
                           />
@@ -289,14 +289,14 @@ const Navbar = () => {
                           className=""
                         >
                           <img
-                            src="images/facebook.png"
+                            src="/images/facebook.png"
                             alt="facebook"
                             className="max-h-12"
                           />
                         </a>
                         <a href="tel:+16137692098" className="mt-2">
                           <img
-                            src="images/phone.png"
+                            src="/images/phone.png"
                             alt="phone"
                             className="max-h-9"
                           />
@@ -312,7 +312,7 @@ const Navbar = () => {
                   <div className="mr-5 nav:hidden">
                     <div className="w-10">
                       <img
-                        src={"images/MenuLogo.png"}
+                        src={"/images/MenuLogo.png"}
                         alt="mobile nav"
                         onClick={() => setMobileNavOpen((prev) => !prev)}
                         className={
@@ -323,7 +323,7 @@ const Navbar = () => {
                         }
                       />
                       <img
-                        src={"images/MenuLogoX.png"}
+                        src={"/images/MenuLogoX.png"}
                         alt="mobile nav"
                         onClick={() => setMobileNavOpen((prev) => !prev)}
                         className={
@@ -389,6 +389,10 @@ const Navbar = () => {
                         >
                           <button className="font-bold">About</button>
                         </Link>
+                        <div className="text-sm border border-white rounded-full">
+                          <GoogleButton/>
+                        </div>
+                        
                       </div>
 
                       <div className="mx-auto flex flex-row-reverse gap-5">
@@ -399,7 +403,7 @@ const Navbar = () => {
                           className="mt-[9px]"
                         >
                           <img
-                            src="images/instagram.png"
+                            src="/images/instagram.png"
                             alt="instagram"
                             className="max-h-9"
                           />
@@ -411,14 +415,14 @@ const Navbar = () => {
                           className=""
                         >
                           <img
-                            src="images/facebook.png"
+                            src="/images/facebook.png"
                             alt="facebook"
                             className="max-h-12"
                           />
                         </a>
                         <a href="tel:+16137692098" className="mt-2">
                           <img
-                            src="images/phone.png"
+                            src="/images/phone.png"
                             alt="phone"
                             className="max-h-9"
                           />
@@ -439,7 +443,7 @@ const Navbar = () => {
                         rel="noreferrer"
                       >
                         <img
-                          src="images/instagram.png"
+                          src="/images/instagram.png"
                           alt="instagram"
                           className="max-h-7"
                         />
@@ -450,14 +454,14 @@ const Navbar = () => {
                         rel="noreferrer"
                       >
                         <img
-                          src="images/facebook.png"
+                          src="/images/facebook.png"
                           alt="facebook"
                           className="max-h-11"
                         />
                       </a>
                       <a href="tel:+16137692098" className="">
                         <img
-                          src="images/phone.png"
+                          src="/images/phone.png"
                           alt="phone"
                           className="max-h-7"
                         />

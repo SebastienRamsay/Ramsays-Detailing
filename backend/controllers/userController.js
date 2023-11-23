@@ -246,6 +246,10 @@ const getAllUserInfo = async (req, res) => {
     const employeeData = [];
     employees.map((employee) => {
       const coords = jwt.verify(user.location, process.env.SECRET).coords;
+      const requestedLocation = jwt.verify(
+        user.requestedLocation,
+        process.env.SECRET
+      ).location;
       employeeData.push({
         id: employee._id,
         profilePicture: employee.profilePicture,
@@ -257,7 +261,7 @@ const getAllUserInfo = async (req, res) => {
         services: employee.services,
         requestedDistance: employee.requestedDistance,
         requestedServices: employee.requestedServices,
-        requestedLocation: employee.requestedLocation,
+        requestedLocation: requestedLocation,
         vacationTime: employee.vacationTime,
         schedule: employee.schedule,
       });

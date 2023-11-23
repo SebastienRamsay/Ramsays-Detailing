@@ -5,7 +5,6 @@ const localStorage = new LocalStorage("./scratch");
 require("../passport");
 const Reader = require("@maxmind/geoip2-node").Reader;
 const jwt = require("jsonwebtoken");
-const bcrypt = require("bcrypt");
 const User = require("../models/userModel");
 
 function isLoggedIn(req, res, next) {

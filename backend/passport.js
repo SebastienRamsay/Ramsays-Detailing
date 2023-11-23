@@ -4,10 +4,8 @@ const refresh = require("passport-oauth2-refresh");
 const GoogleStrategy = require("passport-google-oauth2").Strategy;
 const User = require("./models/userModel");
 const jwt = require("jsonwebtoken");
-const bcrypt = require("bcrypt");
 const { LocalStorage } = require("node-localstorage");
 const localStorage = new LocalStorage("./scratch");
-const HttpsProxyAgent = require("https-proxy-agent");
 
 const strategy = new GoogleStrategy(
   {

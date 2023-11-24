@@ -241,15 +241,20 @@ const getAllUserInfo = async (req, res) => {
 
     const employees = allUsers.filter((user) => user.isEmployee);
     const users = allUsers.filter((user) => !user.isEmployee);
-
-    console.log(employees, users);
     const employeeData = [];
     employees.map((employee) => {
-      const coords = jwt.verify(user.location, process.env.SECRET).coords;
-      const requestedLocation = jwt.verify(
-        user.requestedLocation,
+      let coords
+      let requestedLocation
+      if (employee.location != "" && employee.location != undefined){
+        coords = jwt.verify(employee.location, process.env.SECRET).coords;
+      }
+      if (employee.requestedLocation != "" && employee.requestedLocation != undefined){
+        requestedLocation = jwt.verify(
+        employee.requestedLocation,
         process.env.SECRET
       ).location;
+      }
+      
       employeeData.push({
         id: employee._id,
         profilePicture: employee.profilePicture,

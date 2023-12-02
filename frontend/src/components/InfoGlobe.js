@@ -1,7 +1,10 @@
-import React, { useEffect, useRef } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import gsap from "gsap";
+import AuthContext from "../context/AuthContext";
+import Globe from "three-globe";
+import ThreeGlobe from "three-globe";
 
 const sizes = {
   width: 800,
@@ -22,11 +25,7 @@ const fullRotation = (2 * Math.PI * earthRadius) / 3;
 const rotationSpeed = 0.1;
 var rotateGlobe = true;
 const loader = new GLTFLoader();
-const location = {
-  lon: 45,
-  lat: -76,
-  oldy: 0,
-};
+var oldy = 0;
 var dragGlobe = false;
 let earthMesh;
 //camera
@@ -35,6 +34,9 @@ camera.position.set(10, 0, 0);
 let zoomState = false;
 let pointer;
 let loop;
+
+var employeeRingData = [];
+
 const scene = new THREE.Scene();
 
 function latLongToVector3(lat, lon) {
@@ -60,28 +62,29 @@ const cloudGroup = new THREE.Group();
 let cloudMesh;
 
 export default function InfoGlobe() {
+  const { coords } = useContext(AuthContext);
   var hasMounted = useRef(false);
-  // const [userLocation, setUserLocation] = useState(null);
+  const [userLocation, setUserLocation] = useState(null);
   useEffect(() => {
     if (hasMounted.current) {
       // Component has already mounted, it's a remount
       return;
     }
 
-    // if ("geolocation" in navigator) {
-    //   navigator.geolocation.getCurrentPosition(
-    //     (position) => {
-    //       // Retrieve the latitude and longitude from the position object
-    //       const { latitude, longitude } = position.coords;
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          // Retrieve the latitude and longitude from the position object
+          const { latitude, longitude } = position.coords;
 
-    //       // Update the state with the user's location
-    //       setUserLocation({ lat: latitude, lon: longitude });
-    //     },
-    //     (error) => {
-    //       console.error("Error getting user location:", error.message);
-    //     }
-    //   );
-    // }
+          // Update the state with the user's location
+          setUserLocation({ lat: latitude, lon: longitude });
+        },
+        (error) => {
+          console.error("Error getting user location:", error.message);
+        }
+      );
+    }
 
     const earthGeometry = new THREE.SphereGeometry(earthRadius, 50, 50);
     const earthMaterial = new THREE.MeshPhongMaterial({
@@ -100,22 +103,52 @@ export default function InfoGlobe() {
     // );
     group.add(earthMesh);
 
-    loader.load(
-      "models/car/1971_skoda_110_super_sport_lp.glb",
-      function (glb) {
-        const { position, rotation } = latLongToVector3(45, -76);
+    // coords?.map((coord) => {
+    //   loader.load(
+    //     "models/car/1971_skoda_110_super_sport_lp.glb",
+    //     function (glb) {
+    //       const { position, rotation } = latLongToVector3(coord.lat, coord.lon);
 
-        // Apply position and rotation to the model's scene
-        glb.scene.scale.copy(new THREE.Vector3(0.02, 0.02, 0.02));
-        glb.scene.position.copy(position);
-        glb.scene.rotation.copy(rotation);
-        group.add(glb.scene);
-      },
-      undefined,
-      function (error) {
-        console.error(error);
-      }
-    );
+    //       // Apply position and rotation to the model's scene
+    //       glb.scene.scale.copy(new THREE.Vector3(0.02, 0.02, 0.02));
+    //       glb.scene.position.copy(position);
+    //       glb.scene.rotation.copy(rotation);
+    //       group.add(glb.scene);
+    //     },
+    //     undefined,
+    //     function (error) {
+    //       console.error(error);
+    //     }
+    //   );
+    // });
+
+    // Gen random data
+    const N = 10;
+    const gData = coords?.map((coord) => ({
+      lat: coord.lat,
+      lng: coord.lon,
+      maxR: 50 / 15,
+      propagationSpeed: 1,
+      repeatPeriod: 1000,
+    }));
+
+    const colorInterpolator = (t) => `rgba(255,100,50,${1 - t})`;
+    const material = new THREE.MeshBasicMaterial({
+      map: new THREE.TextureLoader().load("/images/texture/transparent.png"),
+      transparent: true,
+      opacity: 0,
+    });
+
+    const Globe = new ThreeGlobe()
+      .globeMaterial(material)
+      .ringsData(gData)
+      .ringColor(() => colorInterpolator)
+      .ringMaxRadius("maxR")
+      .ringPropagationSpeed("propagationSpeed")
+      .ringRepeatPeriod("repeatPeriod");
+    Globe.scale.set(0.03, 0.03, 0.03);
+    Globe.rotation.y = THREE.MathUtils.degToRad(90);
+    group.add(Globe);
 
     scene.add(group);
 
@@ -218,7 +251,10 @@ export default function InfoGlobe() {
     loader.load(
       "models/pointer/map_pointer.glb",
       function (glb) {
-        const { position, rotation } = latLongToVector3(45, -76);
+        const { position, rotation } = latLongToVector3(
+          userLocation.lat,
+          userLocation.lon
+        );
 
         // Apply position and rotation to the model's scene
         glb.scene.scale.copy(new THREE.Vector3(0.02, 0.02, 0.02));
@@ -241,15 +277,15 @@ export default function InfoGlobe() {
 
     const groupRotation = zoomState
       ? {
-          y: location.oldy,
+          y: oldy,
           z: 0,
         }
       : {
-          y: THREE.MathUtils.degToRad(location.lon),
-          z: THREE.MathUtils.degToRad(location.lat),
+          y: THREE.MathUtils.degToRad(userLocation.lat),
+          z: THREE.MathUtils.degToRad(userLocation.lon),
         };
     if (!zoomState) {
-      location.oldy = group.rotation.y;
+      oldy = group.rotation.y;
     }
 
     // Create a GSAP timeline

@@ -7,6 +7,7 @@ import React, {
   useState,
 } from "react";
 import AuthContext from "./AuthContext";
+import toast from "react-hot-toast";
 
 const BookingsContext = createContext();
 
@@ -70,6 +71,7 @@ function BookingsContextProvider(props) {
 
     const employeeId = idResponse.data;
     if (idResponse.status === 200) {
+      toast.success("Booking Claimed");
       var newBookings = bookings.filter((b) => b._id !== booking._id);
       var newClaimedBookings = claimedBookings;
       booking.employeeId = employeeId;
@@ -96,6 +98,7 @@ function BookingsContextProvider(props) {
       }
     );
     if (idResponse.status === 200) {
+      toast.success("Booking Un-Claimed");
       const newBookings = [...bookings]; // Create a new array using spread operator
       const newClaimedBookings = claimedBookings.filter(
         (b) => b._id !== booking._id
@@ -137,6 +140,7 @@ function BookingsContextProvider(props) {
           }
         );
         if (bookingResponse.status === 200) {
+          toast.success("Booking Deleted");
           var newBookings = bookings.filter((b) => b._id !== booking._id);
           var newClaimedBookings = claimedBookings.filter(
             (b) => b._id !== booking._id
@@ -173,6 +177,7 @@ function BookingsContextProvider(props) {
     }
 
     if (calendarResponse.status === 200) {
+      toast.success("Booking Added To Calendar");
       const idResponse = await axios.patch(
         "https://ramsaysdetailing.ca:4000/api/bookings/setUserEventID",
         {
@@ -213,6 +218,7 @@ function BookingsContextProvider(props) {
     );
 
     if (calendarResponse.status === 200) {
+      toast.success("Booking Removed from Calendar");
       const idResponse = await axios.patch(
         "https://ramsaysdetailing.ca:4000/api/bookings/setUserEventID",
         {
@@ -256,6 +262,7 @@ function BookingsContextProvider(props) {
       return;
     }
     if (calendarResponse.status === 200) {
+      toast.success("Booking Removed From Calendar");
       const idResponse = await axios.patch(
         "https://ramsaysdetailing.ca:4000/api/bookings/setEmployeeEventID",
         {
@@ -301,6 +308,7 @@ function BookingsContextProvider(props) {
       return;
     }
     if (calendarResponse.status === 200) {
+      toast.success("Booking Added To Calendar");
       const idResponse = await axios.patch(
         "https://ramsaysdetailing.ca:4000/api/bookings/setEmployeeEventID",
         {

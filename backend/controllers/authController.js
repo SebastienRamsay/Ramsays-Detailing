@@ -28,9 +28,17 @@ const loggedIn = async function (req, res) {
       });
     const token = req.cookies.token;
 
+    let employees = await User.find();
+    employees = employees.filter((user) => user.isEmployee);
+    let coords = [];
+    employees.map((employee) => {
+      decodedCoords = jwt.verify(employee.coords, process.env.SECRET);
+      coords.push({ lon: decodedCoords.lon, lat: decodedCoords.lat });
+    });
+
     if (!token) {
       console.log("USER IS A GUEST");
-      return res.json({ loginType: "guest" });
+      return res.json({ loginType: "guest", adminInfo: { coords } });
     }
 
     const decodedToken = jwt.verify(token, process.env.SECRET);
@@ -53,6 +61,14 @@ const loggedIn = async function (req, res) {
       }
     }
 
+    let location;
+
+    try {
+      location = jwt.verify(user.location, process.env.SECRET).location;
+    } catch (error) {
+      location = "";
+    }
+
     try {
       const adminToken = req.cookies.admin;
       const decodedToken = jwt.verify(adminToken, process.env.SECRET);
@@ -63,8 +79,9 @@ const loggedIn = async function (req, res) {
           loginType: "admin",
           adminInfo: {
             distance: user?.distance,
-            location: user?.location,
+            location,
             availableServices: user?.availableServices,
+            coords,
           },
         });
       }
@@ -79,10 +96,11 @@ const loggedIn = async function (req, res) {
           loginType: "employee",
           adminInfo: {
             distance: user?.distance,
-            location: user?.location,
+            location,
             availableServices: user?.services,
             vacationTime: user?.vacationTime,
             schedule: user?.schedule,
+            coords,
           },
         });
       }
@@ -91,7 +109,7 @@ const loggedIn = async function (req, res) {
       // user is not an employee
     }
 
-    return res.json({ loginType: "google" });
+    return res.json({ loginType: "google", adminInfo: { coords } });
   } catch (error) {
     console.log("/LoggedIn: ", error);
 

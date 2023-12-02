@@ -6,11 +6,13 @@ import React, {
   useRef,
   useState,
 } from "react";
+import toast from "react-hot-toast";
 
 const AuthContext = createContext();
 
 function AuthContextProvider(props) {
   const [loggedIn, setLoggedIn] = useState();
+  const [coords, setCoords] = useState([]);
   const [isAdmin, setIsAdmin] = useState();
   const [isEmployee, setIsEmployee] = useState();
   const [adminInfo, setEmployeeInfo] = useState();
@@ -19,6 +21,66 @@ function AuthContextProvider(props) {
   const [profilePicture, setProfilePicture] = useState();
   const isMounted = useRef(false);
 
+  async function updateEmployeeInfo(location, services, distance, userId) {
+    if (location.length < 10) {
+      return;
+    }
+
+    try {
+      const response = await axios.patch(
+        "https://ramsaysdetailing.ca:4000/api/user/employee/info",
+        {
+          location,
+          services,
+          distance,
+          userId,
+        },
+        {
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.log("Error Updating employee info: " + error);
+    }
+  }
+
+  const requestUpdateEmployeeInfo = async (
+    address,
+    availableServices,
+    distance
+  ) => {
+    if (address.length < 10) {
+      return;
+    }
+
+    try {
+      const response = await axios.patch(
+        "https://ramsaysdetailing.ca:4000/api/user/employee/info/request",
+        {
+          location: address,
+          services: availableServices,
+          distance,
+        },
+        {
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      if (response.status === 200) {
+        toast.success("Info Updated");
+      }
+      return response;
+    } catch (error) {
+      console.log("Error requesting to update employee info: " + error);
+    }
+  };
+
   async function getUserInfo() {
     try {
       const response = await axios.get(
@@ -26,6 +88,9 @@ function AuthContextProvider(props) {
         {},
         {
           credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
         }
       );
       if (response.status === 200) {
@@ -46,6 +111,9 @@ function AuthContextProvider(props) {
         "https://ramsaysdetailing.ca:4000/api/user/admin/info",
         {
           credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
         }
       );
       if (userResponse.status === 200) {
@@ -67,9 +135,14 @@ function AuthContextProvider(props) {
         {},
         {
           credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
         }
       );
       if (response.status === 200) {
+        console.log(response.data);
+        setCoords(response.data.adminInfo.coords);
         const loginType = response.data.loginType;
         if (loginType === "guest") {
           setIsAdmin(false);
@@ -125,6 +198,9 @@ function AuthContextProvider(props) {
         getLoggedIn,
         displayName,
         profilePicture,
+        requestUpdateEmployeeInfo,
+        updateEmployeeInfo,
+        coords,
       }}
     >
       {props.children}

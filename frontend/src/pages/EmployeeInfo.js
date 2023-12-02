@@ -5,15 +5,19 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import AuthContext from "../context/AuthContext";
 import ServicesContext from "../context/ServicesContext";
+import toast from "react-hot-toast";
 
 const EmployeeInfo = () => {
-  const { getLoggedIn, adminInfo } = useContext(AuthContext);
+  const { getLoggedIn, adminInfo, requestUpdateEmployeeInfo } =
+    useContext(AuthContext);
   const { services } = useContext(ServicesContext);
   const [availableServices, setAvailableServices] = useState(
     adminInfo.availableServices || []
   );
   const [distance, setDistance] = useState(adminInfo.distance || 50);
-
+  var [address, setAddress] = useState(adminInfo.location || "");
+  var [addressSuggestions, setAddressSuggestions] = useState([]);
+  const [scheduleError, setScheduleError] = useState("");
   const [vacationTime, setVacationTime] = useState({
     startDate:
       adminInfo.vacationTime?.startDate &&
@@ -89,11 +93,6 @@ const EmployeeInfo = () => {
     },
   });
 
-  var [address, setAddress] = useState(adminInfo.location || "");
-  var [addressSuggestions, setAddressSuggestions] = useState([]);
-  const [infoError, setInfoError] = useState("");
-  const [scheduleError, setScheduleError] = useState("");
-
   const resetVacationTime = async () => {
     setVacationTime({
       startDate: "",
@@ -148,37 +147,6 @@ const EmployeeInfo = () => {
     });
   };
 
-  const updateEmployeeInfo = async (e) => {
-    e.preventDefault();
-
-    if (address.length < 10) {
-      return;
-    }
-
-    try {
-      setInfoError();
-      const response = await axios.patch(
-        "https://ramsaysdetailing.ca:4000/api/user/employee/info/request",
-        {
-          location: address,
-          services: availableServices,
-          distance,
-        },
-        {
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      console.log(response);
-      setInfoError(response.data);
-      getLoggedIn();
-    } catch (error) {
-      console.log("Error logging in as admin: " + error);
-    }
-  };
-
   const updateSchedule = async (e) => {
     e.preventDefault();
 
@@ -201,7 +169,8 @@ const EmployeeInfo = () => {
       setScheduleError(response.data);
       getLoggedIn();
     } catch (error) {
-      console.log("Error logging in as admin: " + error);
+      console.log("Error Updating Schedule: " + error);
+      toast.error("Error Updating Schedule: " + error);
     }
   };
 
@@ -284,7 +253,10 @@ const EmployeeInfo = () => {
         </h3>
 
         <form
-          onSubmit={updateEmployeeInfo}
+          onSubmit={(e) => {
+            e.preventDefault();
+            requestUpdateEmployeeInfo(address, availableServices, distance);
+          }}
           className="flex flex-col gap-3 md:flex-row md:gap-10"
         >
           <div className="">
@@ -353,12 +325,23 @@ const EmployeeInfo = () => {
               ))}
           </div>
           <button
-            onClick={updateEmployeeInfo}
+            onClick={(e) => {
+              e.preventDefault();
+              const response = requestUpdateEmployeeInfo(
+                address,
+                availableServices,
+                distance
+              );
+              if (response.status === 200) {
+                toast.success("Request Sent Successfully");
+              } else {
+                toast.error("Request Failed");
+              }
+            }}
             className="button mt-5 bg-ramsayBlue-0 text-white hover:bg-blue-800 sm:mt-0"
           >
             Update Info
           </button>
-          {infoError}
         </form>
       </div>
       <div className="mx-auto flex flex-col items-center gap-10 rounded-3xl bg-primary-0 p-5">

@@ -8,6 +8,7 @@ import React, {
   useState,
 } from "react";
 import AuthContext from "./AuthContext";
+import toast from "react-hot-toast";
 
 const CartContext = createContext();
 
@@ -71,7 +72,6 @@ function CartContextProvider(props) {
   useEffect(() => {
     if (!isMounted.current && loggedIn !== undefined && loggedIn) {
       getCart();
-      console.log("GETCART", loggedIn);
       isMounted.current = true;
     }
   }, [loggedIn, getCart, fetchBusyTimes]);
@@ -95,10 +95,11 @@ function CartContextProvider(props) {
         const data = await response.data;
         console.log("Item added to cart: ", data);
         setCart(data);
-        setCartResponse("Item added to cart");
+        toast.success("Item added to cart");
         console.log(cartLength + 1);
         setCartLength(cartLength + 1);
       } else {
+        toast.error("failed to add item to cart");
         console.error("failed to add item to cart: ", response);
       }
     } catch (error) {
@@ -129,7 +130,9 @@ function CartContextProvider(props) {
         console.log("Item removed from cart: ", data);
         setCart(data);
         setCartLength(cartLength - 1);
+        toast.success("Item removed from cart");
       } else {
+        toast.error("failed to remove item from cart");
         console.error("failed to remove item from cart: ", response);
       }
     } catch (error) {

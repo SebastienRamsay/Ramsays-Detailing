@@ -79,14 +79,17 @@ const updateEmployeeInfo = async (req, res) => {
         user.requestedLocation,
         process.env.SECRET
       ).location;
-      const coords = getCoordinatesFromAddress(decodedLocation);
+      const coords = await getCoordinatesFromAddress(decodedLocation);
+      console.log(coords);
       const signedCoords = jwt.sign(
         {
-          coords,
+          lon: coords.longitude,
+          lat: coords.latitude,
         },
         process.env.SECRET
       );
-      user.location = signedCoords;
+      user.coords = signedCoords;
+      user.location = user.requestedLocation;
     }
 
     if (services) {
@@ -97,9 +100,9 @@ const updateEmployeeInfo = async (req, res) => {
       user.distance = user.requestedDistance;
     }
 
-    user.requestedDistance = "";
-    user.requestedLocation = "";
-    user.requestedServices = "";
+    user.requestedDistance = undefined;
+    user.requestedLocation = undefined;
+    user.requestedServices = undefined;
 
     user.save();
 
@@ -243,30 +246,44 @@ const getAllUserInfo = async (req, res) => {
     const users = allUsers.filter((user) => !user.isEmployee);
     const employeeData = [];
     employees.map((employee) => {
-      let coords
-      let requestedLocation
-      if (employee.location != "" && employee.location != undefined){
-        coords = jwt.verify(employee.location, process.env.SECRET).coords;
+      let requestedLocation;
+      let location;
+      let coords;
+      try {
+        console.log(employee.coords);
+        coords = jwt.verify(employee.coords, process.env.SECRET);
+        console.log(coords.lon);
+      } catch (error) {
+        coords = "";
       }
-      if (employee.requestedLocation != "" && employee.requestedLocation != undefined){
+      try {
+        location = jwt.verify(employee.location, process.env.SECRET).location;
+      } catch (error) {
+        location = "";
+      }
+      try {
         requestedLocation = jwt.verify(
-        employee.requestedLocation,
-        process.env.SECRET
-      ).location;
+          employee.requestedLocation,
+          process.env.SECRET
+        ).location;
+      } catch (error) {
+        requestedLocation = "";
       }
-      
+
       employeeData.push({
         id: employee._id,
         profilePicture: employee.profilePicture,
         displayName: employee.displayName,
         email: employee.email,
         isEmployee: employee.isEmployee,
-        location: coords,
+        location,
+        lon: coords.lon,
+        lat: coords.lat,
         distance: employee.distance,
         services: employee.services,
         requestedDistance: employee.requestedDistance,
         requestedServices: employee.requestedServices,
-        requestedLocation: requestedLocation,
+        requestedLocation,
         vacationTime: employee.vacationTime,
         schedule: employee.schedule,
       });

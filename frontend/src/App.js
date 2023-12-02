@@ -1,5 +1,6 @@
 import axios from "axios";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { Toaster } from "react-hot-toast";
 // pages & components
 import { useContext } from "react";
 import Footer from "./components/Footer";
@@ -55,6 +56,7 @@ function App() {
             </Routes>
           </div>
           <Footer />
+          <Toaster posistion="top-right" />
         </BrowserRouter>
       ) : (
         <div className="page flex min-h-screen items-center justify-center space-x-2 bg-secondary-0">

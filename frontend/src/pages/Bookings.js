@@ -2,6 +2,7 @@ import axios from "axios";
 import React, { useContext } from "react";
 import AuthContext from "../context/AuthContext";
 import BookingsContext from "../context/BookingsContext";
+import toast from "react-hot-toast";
 
 const Bookings = () => {
   const {
@@ -50,6 +51,7 @@ const Bookings = () => {
         }
       );
       if (response.status === 200) {
+        toast.success("picture removed");
         setClaimedBookings((old) =>
           old.map((booking) => ({
             ...booking,
@@ -78,6 +80,7 @@ const Bookings = () => {
         }
       );
       if (response.status === 200) {
+        toast.success("picture removed");
         setClaimedBookings((old) =>
           old.map((booking) => ({
             ...booking,
@@ -114,6 +117,7 @@ const Bookings = () => {
       );
 
       if (response.status === 200) {
+        toast.success("picture uploaded");
         const data = response.data;
         setClaimedBookings((old) => {
           // Create a new array with the updated booking object
@@ -170,6 +174,7 @@ const Bookings = () => {
       );
 
       if (response.status === 200) {
+        toast.success("picture uploaded");
         const data = await response.data;
         setClaimedBookings((old) => {
           // Create a new array with the updated booking object

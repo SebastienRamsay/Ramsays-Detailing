@@ -28,6 +28,10 @@ const userSchema = new Schema(
       type: String,
       required: false,
     },
+    coords: {
+      type: String,
+      required: false,
+    },
     services: {
       type: [String],
       required: false,

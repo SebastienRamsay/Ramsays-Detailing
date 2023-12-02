@@ -5,6 +5,7 @@ import DateTimePicker from "../components/DateTimePicker";
 import AuthContext from "../context/AuthContext";
 import BookingsContext from "../context/BookingsContext";
 import CartContext from "../context/CartContext";
+import toast from "react-hot-toast";
 
 const Cart = () => {
   const navigate = useNavigate();
@@ -51,7 +52,7 @@ const Cart = () => {
     }
   }
 
-  async function createCalendarEvent() {
+  async function createBooking() {
     setBookingError("");
 
     if (!isValidPhoneNumber(phoneNumber)) {
@@ -108,6 +109,7 @@ const Cart = () => {
       );
       const bookingData = bookingResponse.data;
       if (bookingResponse.status === 200) {
+        toast.success("Booking Created");
         const bookingData = bookingResponse.data;
         if (isChecked) {
           const calendarResponse = await axios.post(
@@ -126,6 +128,7 @@ const Cart = () => {
           const calendarData = calendarResponse.data;
 
           if (calendarResponse.status === 200) {
+            toast.success("Booking Added To Your Google Calendar");
             await axios.patch(
               "https://ramsaysdetailing.ca:4000/api/bookings/setUserEventID",
               {
@@ -368,7 +371,7 @@ const Cart = () => {
             </div>
             <button
               className="button mt-3 bg-ramsayBlue-0 transition-all duration-500 hover:bg-blue-800"
-              onClick={createCalendarEvent}
+              onClick={createBooking}
             >
               Book Detailing
             </button>

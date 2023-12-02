@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 import AuthContext from "../context/AuthContext";
 import CartContext from "../context/CartContext";
 import GoogleButton from "./googleButton";
+import ServicesContext from "../context/ServicesContext";
 
 const FullServiceDetails = ({ service }) => {
   const imageDirectory = "https://ramsaysdetailing.ca:4000/images/";
@@ -21,6 +22,7 @@ const FullServiceDetails = ({ service }) => {
     useContext(CartContext);
   const { loggedIn, isAdmin } = useContext(AuthContext);
   const [additionalQuestions, setAdditionalQuestions] = useState([]);
+  const { updateService } = useContext(ServicesContext);
 
   function calculatePrice({
     questionobj,
@@ -231,6 +233,9 @@ const FullServiceDetails = ({ service }) => {
               <>
                 <button
                   onClick={() => {
+                    if (editMode) {
+                      updateService(service);
+                    }
                     setEditMode(!editMode);
                   }}
                   className="absolute right-5 sm:right-0"
@@ -289,10 +294,16 @@ const FullServiceDetails = ({ service }) => {
                           <input
                             className="h-8 w-64 rounded-md font-sans text-black"
                             value={question.question}
+                            onChange={(e) => {
+                              question.question = e;
+                            }}
                           ></input>
                           <h4 className="mr-1 text-lg">Description:</h4>
                           <textarea
                             value={question.description}
+                            onChange={(e) => {
+                              question.description = e;
+                            }}
                             className="h-20"
                             maxLength={65}
                             rows={3} // You can adjust the number of rows as needed
@@ -307,11 +318,17 @@ const FullServiceDetails = ({ service }) => {
                                 <input
                                   className="h-8 w-64 rounded-md font-sans text-black"
                                   value={answer.answer}
+                                  onChange={(e) => {
+                                    answer.answer = e;
+                                  }}
                                 ></input>
                                 <h4 className="mr-1 text-lg">Cost Increase:</h4>
                                 <input
                                   className="h-8 w-64 rounded-md font-sans text-black"
                                   value={answer.costIncrease}
+                                  onChange={(e) => {
+                                    answer.costIncrease = e;
+                                  }}
                                 ></input>
                               </>
                             ))}

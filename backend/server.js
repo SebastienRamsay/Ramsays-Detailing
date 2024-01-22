@@ -9,15 +9,18 @@ const cookieParser = require("cookie-parser");
 const jwt = require("jsonwebtoken");
 const usersRoutes = require("./routes/users");
 const serviceRoutes = require("./routes/service");
+const adminServiceRoutes = require("./routes/adminService");
 const bookingRoutes = require("./routes/booking");
 const cartRoutes = require("./routes/cart");
 const authRoute = require("./routes/auth");
 const calendarRoute = require("./routes/googleCalendar");
 const googlePlacesAPI = require("./routes/googlePlacesAPI");
 const uploadRoutes = require("./routes/uploads");
+const stripeRoutes = require("./routes/stripe");
 const session = require("express-session");
 const fs = require("node:fs");
 const https = require("https");
+const { requireAuth } = require("./middleware/requireAuth");
 
 // express app
 const app = express();
@@ -74,33 +77,18 @@ app.use(authRoute);
 
 app.use("/api/services", serviceRoutes);
 
-// Middleware function to check for valid JWT token
-const authenticateMiddleware = (req, res, next) => {
-  const token = req.cookies.token;
-
-  if (!token) {
-    return res.status(401).json({ error: "No token provided" });
-  }
-
-  jwt.verify(token, process.env.SECRET, (err, decoded) => {
-    if (err) {
-      res.redirect("/logout");
-      return res.status(401).json({ error: "Invalid token" });
-    }
-    next();
-  });
-};
-
 // Middleware for routes that require authentication
-app.use("/", authenticateMiddleware);
+app.use(requireAuth);
 
 // routes
+app.use("/api/admin/services", adminServiceRoutes);
 app.use("/api/user", usersRoutes);
 app.use("/api/bookings", bookingRoutes);
 app.use("/api/cart", cartRoutes);
 app.use(googlePlacesAPI);
 app.use(calendarRoute);
 app.use("/upload", uploadRoutes);
+app.use("/stripe", stripeRoutes);
 
 // connect to db
 mongoose

@@ -3,8 +3,8 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import gsap from "gsap";
 import AuthContext from "../context/AuthContext";
-import Globe from "three-globe";
 import ThreeGlobe from "three-globe";
+import toast from "react-hot-toast";
 
 const sizes = {
   width: 800,
@@ -35,8 +35,6 @@ let zoomState = false;
 let pointer;
 let loop;
 
-var employeeRingData = [];
-
 const scene = new THREE.Scene();
 
 function latLongToVector3(lat, lon) {
@@ -64,13 +62,9 @@ let cloudMesh;
 export default function InfoGlobe() {
   const { coords } = useContext(AuthContext);
   var hasMounted = useRef(false);
-  const [userLocation, setUserLocation] = useState(null);
-  useEffect(() => {
-    if (hasMounted.current) {
-      // Component has already mounted, it's a remount
-      return;
-    }
+  const [userLocation, setUserLocation] = useState(undefined);
 
+  function getCoords() {
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -81,10 +75,21 @@ export default function InfoGlobe() {
           setUserLocation({ lat: latitude, lon: longitude });
         },
         (error) => {
-          console.error("Error getting user location:", error.message);
+          toast.error(
+            "GeoLocation is disabled. Look for the location icon with the cross through it at the end of your url bar"
+          );
         }
       );
     }
+  }
+
+  useEffect(() => {
+    if (hasMounted.current) {
+      // Component has already mounted, it's a remount
+      return;
+    }
+
+    getCoords();
 
     const earthGeometry = new THREE.SphereGeometry(earthRadius, 50, 50);
     const earthMaterial = new THREE.MeshPhongMaterial({
@@ -122,9 +127,8 @@ export default function InfoGlobe() {
     //   );
     // });
 
-    // Gen random data
-    const N = 10;
-    const gData = coords?.map((coord) => ({
+    // Gen employee ring data
+    const employeeRingData = coords?.map((coord) => ({
       lat: coord.lat,
       lng: coord.lon,
       maxR: 50 / 15,
@@ -141,7 +145,7 @@ export default function InfoGlobe() {
 
     const Globe = new ThreeGlobe()
       .globeMaterial(material)
-      .ringsData(gData)
+      .ringsData(employeeRingData)
       .ringColor(() => colorInterpolator)
       .ringMaxRadius("maxR")
       .ringPropagationSpeed("propagationSpeed")
@@ -154,7 +158,7 @@ export default function InfoGlobe() {
 
     // set ambientlight
     const ambientlight = new THREE.AmbientLight(0xffffff, 0.2);
-    ambientlight.intensity = 1.5;
+    ambientlight.intensity = 2.5;
     scene.add(ambientlight);
 
     // create cloudGeometry
@@ -245,7 +249,7 @@ export default function InfoGlobe() {
       // Cleanup actions for three js
       renderer.renderLists.dispose();
     };
-  }, []);
+  }, [coords]);
 
   async function loadPin() {
     loader.load(
@@ -271,6 +275,10 @@ export default function InfoGlobe() {
   }
 
   function toggleZoomedIn() {
+    if (userLocation === undefined) {
+      getCoords();
+      return;
+    }
     const camPosition = zoomState
       ? { x: 10, y: 0, z: 0 }
       : { x: 5, y: 0, z: 0 };

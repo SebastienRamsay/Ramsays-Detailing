@@ -11,11 +11,14 @@ const {
   claimBooking,
   setUserEventID,
   busyEvents,
+  preCreateBooking,
 } = require("../controllers/bookingController");
 
 const router = express.Router();
 
 router.post("/", createBooking);
+
+router.post("/pre", preCreateBooking);
 
 router.delete("/", deleteBooking);
 

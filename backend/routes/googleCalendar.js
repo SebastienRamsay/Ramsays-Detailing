@@ -88,11 +88,12 @@ router.delete("/calendar/cancel", async function (req, res) {
       return res.status(400).send("user not logged in");
     }
 
-    const { booking } = req.query; // get the eventId's from the requst
-    console.log(booking);
+    const { employeeEventId, employeeId, userEventId, userId, bookingId } =
+      req.body; // get the eventId's from the requst
+    const booking = await Detailing.findById(bookingId);
 
-    if (booking.employeeEventId !== "none") {
-      const user = await User.findOne({ _id: booking.employeeId });
+    if (employeeEventId !== "none") {
+      const user = await User.findOne({ _id: employeeId });
       const decodedUser = jwt.verify(user.clientCodes, process.env.SECRET);
       const refreshToken = decodedUser.refreshToken;
 
@@ -111,12 +112,14 @@ router.delete("/calendar/cancel", async function (req, res) {
       const response = await guestCalendar.events.delete({
         auth: oauth2Client,
         calendarId: "primary",
-        eventId: booking.employeeEventId,
+        eventId: employeeEventId,
       });
+
+      booking.employeeEventId = "none";
       console.log("EVENT DELETED FROM EMPLOYEES CALENDAR", response);
     }
-    if (booking.userEventId !== "none") {
-      const user = await User.findOne({ _id: booking.userId });
+    if (userEventId !== "none") {
+      const user = await User.findOne({ _id: userId });
       const decodedUser = jwt.verify(user.clientCodes, process.env.SECRET);
       const refreshToken = decodedUser.refreshToken;
 
@@ -135,11 +138,12 @@ router.delete("/calendar/cancel", async function (req, res) {
       const response = await guestCalendar.events.delete({
         auth: oauth2Client,
         calendarId: "primary",
-        eventId: booking.userEventId,
+        eventId: userEventId,
       });
+      booking.userEventId = "none";
       console.log("EVENT DELETED FROM USERS CALENDAR", response);
     }
-
+    booking.save();
     return res.json({ message: "Event Deleted" });
   } catch (error) {
     console.log(error);
@@ -294,7 +298,7 @@ router.post("/calendar", async function (req, res) {
       const guestBusyTimeSlots = await freeBusy(userCalendar, freeBusyQuery);
       // return if user is busy
       if (guestBusyTimeSlots) {
-        return res.send("User is busy");
+        return res.status(304).send("User is busy");
       }
       // insert event into users calendar
       const userResponse = await userCalendar.events.insert({

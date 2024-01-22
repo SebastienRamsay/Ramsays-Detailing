@@ -6,15 +6,18 @@ import "react-datepicker/dist/react-datepicker.css";
 import CartContext from "../context/CartContext";
 
 const DateTimePicker = () => {
-  const { busyTimes, selectedDateTime, setSelectedDateTime } =
-    useContext(CartContext);
-
+  const { setCart, cart } = useContext(CartContext);
+  console.log(cart.selectedDateTime);
+  const busyTimes = cart.busyTimes;
   const twoHoursLater = DateTime.local().plus({ hours: 2 });
+  console.log(busyTimes);
   if (typeof busyTimes !== "string" && busyTimes !== undefined) {
     var excludeTimes = [];
     if (busyTimes.length > 0) {
       busyTimes?.forEach((busyTime) => {
-        if (isSameDay(new Date(busyTime.start), new Date(selectedDateTime))) {
+        if (
+          isSameDay(new Date(busyTime.start), new Date(cart.selectedDateTime))
+        ) {
           let start = new Date(busyTime.start);
           let end = new Date(busyTime.end);
           let current = new Date(start);
@@ -29,9 +32,11 @@ const DateTimePicker = () => {
     return (
       <div>
         <DatePicker
-          selected={selectedDateTime}
+          selected={
+            cart.selectedDateTime ? new Date(cart.selectedDateTime) : null
+          }
           onChange={(dateTime) => {
-            setSelectedDateTime(dateTime);
+            setCart((prev) => ({ ...prev, selectedDateTime: dateTime }));
           }}
           minDate={twoHoursLater.toJSDate()}
           showTimeSelect

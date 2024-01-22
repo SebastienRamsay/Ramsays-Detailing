@@ -4,9 +4,12 @@ const {
   uploadAfterPicture,
   deleteBeforePicture,
   deleteAfterPicture,
+  uploadServicePicture,
 } = require("../controllers/uploadController");
 
 const router = express.Router();
+
+router.post("/service", uploadServicePicture);
 
 router.post("/before", uploadBeforePicture);
 

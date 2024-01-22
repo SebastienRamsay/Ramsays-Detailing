@@ -83,8 +83,7 @@ const updateEmployeeInfo = async (req, res) => {
       console.log(coords);
       const signedCoords = jwt.sign(
         {
-          lon: coords.longitude,
-          lat: coords.latitude,
+          coords,
         },
         process.env.SECRET
       );

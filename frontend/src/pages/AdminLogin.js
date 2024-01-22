@@ -1,4 +1,4 @@
-import { useContext, useState } from "react";
+import { useContext, useState, useRef, useEffect } from "react";
 // import { useLogin } from "../hooks/useLogin";
 import axios from "axios";
 import AuthContext from "../context/AuthContext";
@@ -8,8 +8,12 @@ const AdminLogin = () => {
   const [password, setPassword] = useState("");
   const { getLoggedIn } = useContext(AuthContext);
   const { fetchBookings } = useContext(BookingsContext);
+  const inputRef = useRef(null);
 
   // const {login, error, isLoading} = useLogin()
+  useEffect(() => {
+    inputRef.current.select();
+  }, []);
 
   const adminLogin = async (e) => {
     e.preventDefault();
@@ -53,6 +57,7 @@ const AdminLogin = () => {
           <label className="text-lg font-bold">Password:</label>
           <input
             type="password"
+            ref={inputRef}
             onChange={(e) => setPassword(e.target.value)}
             value={password}
             className="mt-1 h-10 rounded-md border border-gray-300 px-4 text-black focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 sm:mt-0"

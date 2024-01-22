@@ -10,7 +10,9 @@ export default function GoogleButton() {
           alt="google"
           className="h-auto w-9 rounded-full sm:w-8"
         />
-        <span className="text-bold mx-2 font-bold">Sign in with Google</span>
+        <span className="text-bold mx-2 whitespace-nowrap font-bold">
+          Sign in with Google
+        </span>
       </button>
     </Link>
   );

@@ -2,6 +2,7 @@ const fs = require("fs");
 const multer = require("multer");
 const mime = require("mime-types");
 const Booking = require("../models/bookingModel.js");
+const Service = require("../models/serviceModel.js");
 const jwt = require("jsonwebtoken");
 
 const imageFilter = (req, file, cb) => {
@@ -15,7 +16,7 @@ const imageFilter = (req, file, cb) => {
 };
 
 // Define storage for multer
-const storage = multer.diskStorage({
+const BeforeAfterStorage = multer.diskStorage({
   destination: function (req, file, cb) {
     const bookingID = req.query.bookingID; // Get user ID from the request body
     const userUploadPath = `./images/${bookingID}`; // Update the path with bookingID
@@ -29,10 +30,25 @@ const storage = multer.diskStorage({
   },
 });
 
-const upload = multer({
-  storage,
+const uploadSix = multer({
+  storage: BeforeAfterStorage,
   fileFilter: imageFilter,
 }).array("images", 6);
+
+// Define storage for multer
+const serviceStorage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, `./images`);
+  },
+  filename: function (req, file, cb) {
+    cb(null, file.originalname);
+  },
+});
+
+const upload = multer({
+  storage: serviceStorage,
+  fileFilter: imageFilter,
+}).single("image");
 
 // Handle file upload
 const uploadBeforePicture = async (req, res) => {
@@ -51,7 +67,7 @@ const uploadBeforePicture = async (req, res) => {
         .status(401)
         .json({ message: "You haven't claimed this booking" });
     }
-    upload(req, res, async (err) => {
+    uploadSix(req, res, async (err) => {
       if (err) {
         console.error(err);
         return res.status(400).json({ message: "Error uploading files" });
@@ -90,7 +106,7 @@ const uploadAfterPicture = async (req, res) => {
         .json({ message: "You haven't claimed this booking" });
     }
 
-    upload(req, res, async (err) => {
+    uploadSix(req, res, async (err) => {
       if (err) {
         console.error(err);
         return res.status(400).json({ message: "Error uploading files" });
@@ -227,9 +243,58 @@ const deleteAfterPicture = async (req, res) => {
   }
 };
 
+// Handle file upload
+const uploadServicePicture = async (req, res) => {
+  try {
+    const token = req.cookies.token;
+    if (!token) {
+      return res.status(401).json({ message: "not logged in" });
+    }
+    const decodedToken = jwt.verify(token, process.env.SECRET);
+    const userID = decodedToken.userID;
+    try {
+      const adminToken = req.cookies.admin;
+      const decodedAdminToken = jwt.verify(adminToken, process.env.SECRET);
+      const isAdmin = decodedAdminToken.isAdmin;
+      if (isAdmin) {
+        upload(req, res, async (err) => {
+          if (err) {
+            console.error(err);
+            return res.status(400).json({ message: "Error uploading files" });
+          }
+          try {
+            if (!req.file) {
+              console.log("No File Provided");
+              return res.status(400).send("No File Provided");
+            }
+
+            // Handle file upload success here
+            const imageName = req.file.filename;
+
+            return res.json({ imageName });
+          } catch (error) {
+            console.log(error);
+            return res.status(400).send("No File Provided");
+          }
+        });
+      } else {
+        return res.status(400).json({ message: "Not An Admin" });
+      }
+    } catch (error) {
+      console.log(error);
+      return res.status(400).json({ error: error });
+      // user is not an admin
+    }
+  } catch (error) {
+    console.log(error);
+    return res.status(400).json({ message: "No Images To Upload" });
+  }
+};
+
 module.exports = {
   deleteAfterPicture,
   deleteBeforePicture,
   uploadAfterPicture,
   uploadBeforePicture,
+  uploadServicePicture,
 };

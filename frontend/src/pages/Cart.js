@@ -1,35 +1,47 @@
 import axios from "axios";
-import { useCallback, useContext, useState } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import DateTimePicker from "../components/DateTimePicker";
 import AuthContext from "../context/AuthContext";
 import BookingsContext from "../context/BookingsContext";
 import CartContext from "../context/CartContext";
 import toast from "react-hot-toast";
+import { loadStripe } from "@stripe/stripe-js";
 
 const Cart = () => {
   const navigate = useNavigate();
   const imageDirectory = "https://ramsaysdetailing.ca:4000/images/";
+  const stripePromise = loadStripe(
+    "pk_test_51NKxGTDXNQXcJQtnMzzJXLcE04Xi9B5eRt2koClKaWBUjJ7PZk9izcjtbkL57emaTo8GQBmHSOwwmTuqqp2pmsxX00Vhvkda9F"
+  );
 
   const {
     cart,
+    setCart,
     removeFromCartContext,
     selectedDateTime,
-    setSelectedDateTime,
     fetchBusyTimes,
     clearCartContext,
-    setBusyTimes,
   } = useContext(CartContext);
   const { fetchBookings, bookings } = useContext(BookingsContext);
 
   const { isEmployee } = useContext(AuthContext);
 
-  var [address, setAddress] = useState("");
   // var [addressValid, setAddressValid] = useState(true);
   var [addressSuggestions, setAddressSuggestions] = useState([]);
-  const [bookingError, setBookingError] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState(null);
-  const [isChecked, setIsChecked] = useState(false); // Create state variable
+
+  useEffect(() => {
+    const query = new URLSearchParams(window.location.search);
+
+    if (query.get("success")) {
+      createBooking();
+      console.log("Payment Complete", cart);
+      toast.success("Payment Complete");
+    }
+    if (query.get("canceled")) {
+      toast.error("Payment Canceled");
+    }
+  }, [navigate]);
 
   function isValidPhoneNumber(phoneNumber) {
     if (
@@ -52,21 +64,19 @@ const Cart = () => {
     }
   }
 
-  async function createBooking() {
-    setBookingError("");
-
-    if (!isValidPhoneNumber(phoneNumber)) {
-      setBookingError("Please Enter A Valid Phone Number");
+  async function preBooking() {
+    if (!isValidPhoneNumber(cart.phoneNumber)) {
+      toast.error("Please Enter A Valid Phone Number");
       return;
     }
 
-    if (address === "") {
-      setBookingError("Please Enter A Valid Address");
+    if (cart.address === "") {
+      toast.error("Please Enter A Valid Address");
       return;
     }
 
-    if (!selectedDateTime) {
-      setBookingError("Please Pick A Date And Time");
+    if (!cart.selectedDateTime) {
+      toast.error("Please Pick A Date And Time");
       return;
     }
     var numberOfUnClaimedBookings = 0;
@@ -79,26 +89,50 @@ const Cart = () => {
     });
 
     if (numberOfUnClaimedBookings >= maxUnClaimedBookings) {
-      setBookingError(
+      toast.error(
         "Too Many Un-Claimed Bookings, Wait Until Your Previous Booking Has Been Claimed By An Employee"
       );
       return;
     }
 
     if (isEmployee) {
-      setBookingError("Employees Cannot Create Bookings");
+      toast.error("Employees Cannot Create Bookings");
       return;
     }
 
     try {
-      cart.phoneNumber = phoneNumber;
-      cart.address = address;
+      const preBookingResponse = await axios.post(
+        "https://ramsaysdetailing.ca:4000/api/bookings/pre",
+        {
+          cart,
+          selectedDateTime: cart.selectedDateTime,
+        },
+        {
+          withCredentials: true, // Include cookies in the request
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      const preBookingData = preBookingResponse.data;
+      if (preBookingResponse.status === 200) {
+        handleCheckout();
+      } else {
+        toast.error(preBookingData);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  async function createBooking() {
+    try {
       console.log(selectedDateTime);
       const bookingResponse = await axios.post(
         "https://ramsaysdetailing.ca:4000/api/bookings",
         {
           cart,
-          selectedDateTime,
+          selectedDateTime: cart.selectedDateTime,
         },
         {
           withCredentials: true, // Include cookies in the request
@@ -110,13 +144,12 @@ const Cart = () => {
       const bookingData = bookingResponse.data;
       if (bookingResponse.status === 200) {
         toast.success("Booking Created");
-        const bookingData = bookingResponse.data;
-        if (isChecked) {
+        if (cart.createCalendarEvent) {
           const calendarResponse = await axios.post(
             "https://ramsaysdetailing.ca:4000/calendar",
             {
               cart,
-              selectedDateTime,
+              selectedDateTime: cart.selectedDateTime,
             },
             {
               withCredentials: true, // Include cookies in the request
@@ -146,34 +179,79 @@ const Cart = () => {
             console.log(calendarData);
           }
         }
-        setSelectedDateTime(undefined);
         clearCartContext();
         fetchBookings();
-        setBusyTimes(undefined);
-        navigate("https://ramsaysdetailing.ca/bookings");
+        navigate("/bookings");
       } else {
         console.error(bookingData);
-        setBookingError(bookingData);
+        toast.error(bookingData);
       }
     } catch (error) {
       console.error("Error occurred while creating calendar event:", error);
     }
   }
 
+  const handleCheckout = async () => {
+    try {
+      const items = cart.services.map((service) => {
+        return {
+          price_data: {
+            currency: "cad",
+            product_data: {
+              name: service.title,
+            },
+            unit_amount: service.price * 100, // Replace with the actual price in cents
+          },
+          quantity: 1,
+        };
+      });
+
+      // Initiate Stripe Checkout session and get the session ID
+      const sessionResponse = await axios.post(
+        "https://ramsaysdetailing.ca:4000/stripe/createCheckoutSession",
+        {
+          items,
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const sessionData = sessionResponse.data;
+      const sessionId = sessionData.sessionId;
+
+      // Redirect to Stripe Checkout
+      const stripe = await stripePromise;
+      const result = await stripe.redirectToCheckout({
+        sessionId,
+      });
+
+      if (result.error) {
+        toast.error("Error redirecting to Checkout");
+        console.error("Error redirecting to Checkout:", result.error);
+      }
+    } catch (error) {
+      toast.error("Error initiating Checkout");
+      console.error("Error initiating Checkout:", error.message);
+    }
+  };
+
   const handleSuggestionClick = (suggestion) => {
-    setAddress(suggestion);
+    setCart((prev) => ({ ...prev, address: suggestion }));
     setAddressSuggestions([]);
     console.log(cart);
     fetchBusyTimes({
       customerLocation: suggestion,
       expectedTimeToComplete: cart.timeToComplete,
-      serviceName: cart.services[0].title,
+      serviceNames: cart.services.map((service) => service.title),
     });
   };
 
   const handleAddressSuggestions = useCallback(async (e) => {
     const inputAddress = e.target.value;
-    setAddress(inputAddress);
+    setCart((prev) => ({ ...prev, address: inputAddress }));
 
     if (inputAddress.length < 5) {
       setAddressSuggestions([]);
@@ -234,7 +312,7 @@ const Cart = () => {
   }, []);
 
   const handleAddressChange = useCallback(async (e) => {
-    setAddress(e.target.value);
+    setCart((prev) => ({ ...prev, address: e.target.value }));
     // const isValid = await confirmAddressExists(address);
     // setAddressValid(isValid);``
   }, []);
@@ -262,6 +340,7 @@ const Cart = () => {
     if (cart.services.length > 0) {
       return (
         <div className="mx-10 flex flex-col items-center justify-center gap-10 py-10">
+          <script src="https://js.stripe.com/v3/"></script>
           <div className="rounded-lg bg-primary-0 p-8 pb-16 text-center md:p-10">
             <div
               className={
@@ -322,7 +401,7 @@ const Cart = () => {
                 <input
                   type="text"
                   placeholder=" Address"
-                  value={address || ""}
+                  value={cart.address || ""}
                   onChange={handleAddressChange}
                   onKeyUp={handleAddressSuggestions}
                   className="h-8 w-64 rounded-md font-sans text-black"
@@ -345,8 +424,13 @@ const Cart = () => {
                 <input
                   type="text"
                   placeholder=" Phone Number"
-                  value={phoneNumber || ""}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  value={cart.phoneNumber || ""}
+                  onChange={(e) =>
+                    setCart((prev) => ({
+                      ...prev,
+                      phoneNumber: e.target.value,
+                    }))
+                  }
                   className="h-8 w-64 rounded-md font-sans text-black"
                 />
               </div>
@@ -356,8 +440,13 @@ const Cart = () => {
                 <input
                   type="checkbox"
                   className="w-4"
-                  checked={isChecked} // Attach state to the checkbox
-                  onChange={(e) => setIsChecked(e.target.checked)} // Update state when checkbox is clicked
+                  checked={cart.createCalendarEvent || false} // Attach state to the checkbox
+                  onChange={(e) =>
+                    setCart((prev) => ({
+                      ...prev,
+                      createCalendarEvent: e.target.checked,
+                    }))
+                  } // Update state when checkbox is clicked
                 />
                 <h1>Add Booking To My Calendar</h1>
               </div>
@@ -371,11 +460,10 @@ const Cart = () => {
             </div>
             <button
               className="button mt-3 bg-ramsayBlue-0 transition-all duration-500 hover:bg-blue-800"
-              onClick={createBooking}
+              onClick={preBooking}
             >
               Book Detailing
             </button>
-            <p>{bookingError}</p>
           </div>
         </div>
       );

@@ -14,6 +14,7 @@ const {
   isMonday,
 } = require("date-fns");
 const { getCoordinatesFromAddress } = require("../utils/locationCache");
+const maxUnClaimedBookings = 1;
 
 const getAllBookingInfo = async (req, res) => {
   try {
@@ -116,19 +117,31 @@ const busyEvents = async (req, res) => {
     }
     const user_id = jwt.verify(token, process.env.SECRET).userID; //auth complete
 
-    const { customerLocation, expectedTimeToComplete, serviceName } = req.body;
-    const customerCoords = getCoordinatesFromAddress(customerLocation);
+    const { customerLocation, expectedTimeToComplete, serviceNames } = req.body;
+    if (!serviceNames || serviceNames.length === 0) {
+      return res.send("No Service NAmes Provided");
+    }
+    const customerCoords = await getCoordinatesFromAddress(customerLocation);
     var validEmployees = [];
     var employees = await User.find({
-      services: { $in: [serviceName] },
+      services: { $in: serviceNames },
       isEmployee: true,
-    }); // get all employees with isAdmin
+    });
     console.log("employees before distance calc: ", employees);
     await Promise.all(
       // check distance between all admin and location variable within the admins set range
       employees.map(async (employee) => {
+        const decodedEmployeeCoords = jwt.verify(
+          employee.coords,
+          process.env.SECRET
+        );
+        const employeeCoords = {
+          longitude: decodedEmployeeCoords.lon,
+          latitude: decodedEmployeeCoords.lat,
+        };
+        console.log(employeeCoords);
         const distance = await calculateDistance(
-          employee.location,
+          employeeCoords,
           customerCoords
         );
         if (distance <= employee.distance) {
@@ -397,14 +410,97 @@ const getUserBookings = async (req, res) => {
       createdAt: -1,
     });
 
-    res.status(200).json(bookings);
+    return res.status(200).json(bookings);
   } catch (error) {
     return res.status(400).send(error);
   }
 };
 
+const preCreateBooking = async (req, res) => {
+  var unClaimedBookings = 0;
+  try {
+    const token = req.cookies.token;
+
+    if (!token) {
+      res.status(400).send("Not Logged In");
+    }
+    const user_id = jwt.verify(token, process.env.SECRET).userID;
+
+    const user = await User.findById(user_id);
+    if (user.isEmployee) {
+      return res.status(400).send("Employees can't create bookings.");
+    }
+
+    const pastBookings = await Booking.find({ userId: user_id });
+    pastBookings.map((booking) => {
+      if (booking.employeeId === "none") {
+        unClaimedBookings++;
+      }
+    });
+    if (unClaimedBookings >= maxUnClaimedBookings) {
+      return res.status(400).send("Too many unclaimed bookings.");
+    }
+    const { cart } = req.body;
+    console.log("cart Address: ", cart.address);
+    const customerCoords = await getCoordinatesFromAddress(cart.address);
+    let answeredQuestions = "";
+    let summary = "";
+    let description = "";
+    let price = 0;
+    let serviceTitles = [];
+    var validEmployees = [];
+
+    // MAKING EVENT DATA
+    const serviceName = cart.services[0].title;
+    console.log(serviceName);
+
+    var employees = await User.find({
+      services: { $in: [serviceName] },
+      isEmployee: true,
+    }); // get all employees
+    console.log("employees before distance calc: ", employees);
+
+    // check distance between all employees location and customerCoords variable within the employee set range
+    const promises = employees.map(async (employee) => {
+      const employeeLocation = jwt.verify(
+        employee.location,
+        process.env.SECRET
+      ).location;
+      console.log(JSON.stringify(employeeLocation));
+      const employeeCoords = await getCoordinatesFromAddress(employeeLocation);
+      const distance = await calculateDistance(employeeCoords, customerCoords);
+      console.log("employee Location: ", employeeLocation);
+      console.log("customer Coords: ", customerCoords);
+      if (distance <= employee.distance) {
+        validEmployees.push(employee);
+        console.log(distance, " <= ", employee.distance);
+        console.log("VALID EMPLOYEE");
+      } else {
+        console.log(distance, " >= ", employee.distance);
+        console.log("INVALID EMPLOYEE");
+      }
+    });
+
+    await Promise.all(promises);
+    console.log("validEmployees: ", validEmployees);
+
+    var possibleEmployeeIds = [];
+    validEmployees.map((employee) => {
+      possibleEmployeeIds.push(employee._id);
+    });
+
+    console.log("possibleEmployeeIds: ", possibleEmployeeIds);
+    if (!possibleEmployeeIds | (possibleEmployeeIds.length <= 0)) {
+      return res.status(400).send("No available employees in you area.");
+    }
+    return res.status(200).send("Pre-Booking Successful.");
+  } catch (error) {
+    console.log("pre-booking error: ", error);
+    return res.status(400).send("Something went wrong.");
+  }
+};
+
 const createBooking = async (req, res) => {
-  const maxUnClaimedBookings = 1;
   var unClaimedBookings = 0;
   try {
     const token = req.cookies.token;
@@ -429,7 +525,7 @@ const createBooking = async (req, res) => {
       return res.status(400).send("too many unclaimed bookings");
     }
     const { cart, selectedDateTime } = req.body;
-    const customerCoords = getCoordinatesFromAddress(cart.address);
+    const customerCoords = await getCoordinatesFromAddress(cart.address);
     let answeredQuestions = "";
     let summary = "";
     let description = "";
@@ -444,15 +540,17 @@ const createBooking = async (req, res) => {
     var employees = await User.find({
       services: { $in: [serviceName] },
       isEmployee: true,
-    }); // get all employees with isAdmin
+    }); // get all employees
     console.log("employees before distance calc: ", employees);
 
-    // check distance between all admin and location variable within the admins set range
+    // check distance between all employees location and customerCoords variable within the employee set range
     const promises = employees.map(async (employee) => {
-      const distance = await calculateDistance(
+      const employeeLocation = jwt.verify(
         employee.location,
-        customerCoords
-      );
+        process.env.SECRET
+      ).location;
+      const employeeCoords = await getCoordinatesFromAddress(employeeLocation);
+      const distance = await calculateDistance(employeeCoords, customerCoords);
       if (distance <= employee.distance) {
         validEmployees.push(employee);
         console.log(distance, " <= ", employee.distance);
@@ -662,24 +760,26 @@ const deleteBooking = async (req, res) => {
     }
     const user_id = jwt.verify(token, process.env.SECRET).userID;
 
-    const { booking } = req.body;
-    console.log("booking: ", booking);
+    const { bookingId, userId, employeeId } = req.body;
 
-    const user = await User.findById(booking.userId);
+    const user = await User.findById(userId);
 
     user.bookings &&
       user?.bookings.filter((b) => {
-        b._id !== booking._id;
+        b._id !== bookingId;
       });
     user.save();
 
-    const employee = await User.findById(booking.employeeId);
+    if (employeeId & (employeeId !== "none")) {
+      const employee = await User.findById(employeeId);
 
-    employee?.claimedBookings.filter((b) => {
-      b._id !== booking._id;
-    });
-    employee.save();
-    await Booking.findByIdAndDelete(booking._id);
+      employee?.claimedBookings?.filter((b) => {
+        b._id !== bookingId;
+      });
+      employee.save();
+    }
+
+    await Booking.findByIdAndDelete(bookingId);
 
     return res.status(200).send("booking deleted");
   } catch (error) {
@@ -694,6 +794,7 @@ module.exports = {
   getEmployeeBookings,
   getUserBookings,
   createBooking,
+  preCreateBooking,
   setEmployeeEventID,
   setUserEventID,
   busyEvents,

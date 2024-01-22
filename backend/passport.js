@@ -18,9 +18,9 @@ const strategy = new GoogleStrategy(
     try {
       const clientCodes = jwt.sign(
         {
-          refreshToken: refreshToken,
-          clientSecret: strategy._oauth2._clientId,
-          clientId: strategy._oauth2._clientSecret,
+          refreshToken,
+          clientSecret: strategy._oauth2._clientSecret,
+          clientId: strategy._oauth2._clientId,
         },
         process.env.SECRET
       );

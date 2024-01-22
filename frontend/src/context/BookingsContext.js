@@ -114,46 +114,58 @@ function BookingsContextProvider(props) {
   async function deleteBooking(booking, isEmployee) {
     console.log(booking, isEmployee);
     try {
-      const calendarResponse = await axios.delete(
-        "https://ramsaysdetailing.ca:4000/calendar/cancel",
-        {
-          params: {
-            booking,
-          },
-          withCredentials: true, // Include cookies in the request
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      if (calendarResponse.status === 200) {
-        const bookingResponse = await axios.delete(
-          "https://ramsaysdetailing.ca:4000/api/bookings",
+      if (
+        (booking.userEventId !== "none") |
+        (booking.employeeEventId !== "none")
+      ) {
+        const calendarResponse = await axios.delete(
+          "https://ramsaysdetailing.ca:4000/calendar/cancel",
           {
-            withCredentials: true,
+            withCredentials: true, // Include cookies in the request
             headers: {
               "Content-Type": "application/json",
             },
             data: {
-              booking,
+              employeeEventId: booking.employeeEventId,
+              employeeId: booking.employeeId,
+              userEventId: booking.userEventId,
+              userId: booking.userId,
+              bookingId: booking._id,
             },
           }
         );
-        if (bookingResponse.status === 200) {
-          toast.success("Booking Deleted");
-          var newBookings = bookings.filter((b) => b._id !== booking._id);
-          var newClaimedBookings = claimedBookings.filter(
-            (b) => b._id !== booking._id
-          );
-          console.log(newBookings);
-          console.log(newClaimedBookings);
-          setBookings(newBookings);
-          setClaimedBookings(newClaimedBookings);
+        if (calendarResponse.status === 200) {
+          toast.success("Booking Removed From Calendar");
         }
+      }
+      const bookingResponse = await axios.delete(
+        "https://ramsaysdetailing.ca:4000/api/bookings",
+        {
+          withCredentials: true,
+          headers: {
+            "Content-Type": "application/json",
+          },
+          data: {
+            bookingId: booking._id,
+            userId: booking.userId,
+            employeeId: booking.employeeId,
+          },
+        }
+      );
+      if (bookingResponse.status === 200) {
+        toast.success("Booking Deleted");
+        var newBookings = bookings.filter((b) => b._id !== booking._id);
+        var newClaimedBookings = claimedBookings.filter(
+          (b) => b._id !== booking._id
+        );
+        console.log(newBookings);
+        console.log(newClaimedBookings);
+        setBookings(newBookings);
+        setClaimedBookings(newClaimedBookings);
       }
     } catch (error) {
       console.log("Error when deleting event: " + error);
-      return "Error when delting event: " + error;
+      toast.error("Error when canceling booking");
     }
   }
 

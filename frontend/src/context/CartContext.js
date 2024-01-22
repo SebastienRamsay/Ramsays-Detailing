@@ -13,11 +13,14 @@ import toast from "react-hot-toast";
 const CartContext = createContext();
 
 function CartContextProvider(props) {
-  const [cart, setCart] = useState(undefined);
+  const [cart, setCart] = useState(() => {
+    const savedCart = localStorage.getItem("cart");
+    return savedCart
+      ? JSON.parse(savedCart)
+      : { busyTimes: [], selectedDateTime: undefined };
+  });
   const [cartLength, setCartLength] = useState(0);
   const [cartContextResponse, setCartResponse] = useState("");
-  const [busyTimes, setBusyTimes] = useState(undefined);
-  const [selectedDateTime, setSelectedDateTime] = useState(undefined);
   const { loggedIn } = useContext(AuthContext);
 
   const getCart = useCallback(async () => {
@@ -30,7 +33,7 @@ function CartContextProvider(props) {
       );
       if (response.status === 200) {
         const data = response.data;
-        setCart(data);
+        setCart((prev) => ({ ...prev, data }));
         setCartLength(data.services?.length || 0);
       } else {
         console.log("Error getting cart: " + response);
@@ -43,14 +46,14 @@ function CartContextProvider(props) {
   var isMounted = useRef(false);
 
   const fetchBusyTimes = useCallback(
-    async ({ customerLocation, expectedTimeToComplete, serviceName }) => {
+    async ({ customerLocation, expectedTimeToComplete, serviceNames }) => {
       try {
         const response = await axios.post(
           "https://ramsaysdetailing.ca:4000/api/bookings/busyTimes",
           {
             customerLocation,
             expectedTimeToComplete,
-            serviceName,
+            serviceNames,
           },
           {
             withCredentials: true,
@@ -60,14 +63,18 @@ function CartContextProvider(props) {
           }
         );
         const busyEvents = response.data;
-        setBusyTimes(busyEvents);
+        setCart((prev) => ({ ...prev, busyTimes: busyEvents }));
         console.log(busyEvents);
       } catch (error) {
         console.error("Error fetching busy events:", error);
       }
     },
-    [setBusyTimes]
+    [setCart]
   );
+
+  useEffect(() => {
+    localStorage.setItem("cart", JSON.stringify(cart));
+  }, [cart]);
 
   useEffect(() => {
     if (!isMounted.current && loggedIn !== undefined && loggedIn) {
@@ -171,11 +178,9 @@ function CartContextProvider(props) {
   return (
     <CartContext.Provider
       value={{
-        selectedDateTime,
-        setSelectedDateTime,
         fetchBusyTimes,
-        busyTimes,
         cart,
+        setCart,
         cartLength,
         cartContextResponse,
         setCartResponse,
@@ -183,7 +188,6 @@ function CartContextProvider(props) {
         addToCartContext,
         removeFromCartContext,
         clearCartContext,
-        setBusyTimes,
       }}
     >
       {props.children}

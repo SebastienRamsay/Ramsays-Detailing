@@ -23,17 +23,81 @@ function ServicesContextProvider(props) {
 
   async function updateService(service) {
     try {
-      const response = await axios.post(
-        "https://www.ramsaysdetailing.ca:4000/api/services",
-        {
-          withCredentials: true,
-        },
+      const response = await axios.patch(
+        "https://ramsaysdetailing.ca:4000/api/admin/services",
         {
           service,
+        },
+        {
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
         }
       );
       if (response.status === 200) {
         toast.success("Service Updated");
+        setServices((prev) => {
+          let temp = [...prev];
+          temp.map((Service) => {
+            if (service._id === Service._id) {
+              Service = response.data.updateService;
+            }
+            return Service;
+          });
+          return temp;
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching services:", error);
+    }
+  }
+
+  async function newService(service) {
+    try {
+      const response = await axios.post(
+        "https://ramsaysdetailing.ca:4000/api/admin/services",
+        {
+          service,
+        },
+        {
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      if (response.status === 200) {
+        toast.success("Service Created");
+        setServices((prev) => {
+          let temp = [...prev];
+          temp.push(response.data.newService);
+          return temp;
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching services:", error);
+    }
+  }
+
+  async function deleteService(serviceID) {
+    try {
+      const response = await axios.delete(
+        `https://ramsaysdetailing.ca:4000/api/admin/services/${serviceID}`,
+        {
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      if (response.status === 200) {
+        toast.success("Service Deleted");
+        setServices((prev) => {
+          let temp = [...prev];
+          temp = temp.filter((s) => s._id !== serviceID);
+          return temp;
+        });
       }
     } catch (error) {
       console.error("Error fetching services:", error);
@@ -45,7 +109,16 @@ function ServicesContextProvider(props) {
   }, []);
 
   return (
-    <ServicesContext.Provider value={{ services, getServices, updateService }}>
+    <ServicesContext.Provider
+      value={{
+        services,
+        getServices,
+        updateService,
+        newService,
+        setServices,
+        deleteService,
+      }}
+    >
       {props.children}
     </ServicesContext.Provider>
   );

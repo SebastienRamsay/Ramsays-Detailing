@@ -2,6 +2,7 @@ const ServiceModel = require("../models/serviceModel");
 const mongoose = require("mongoose");
 const path = require("path");
 const fs = require("fs");
+const jwt = require("jsonwebtoken");
 
 const Service = ServiceModel.Service;
 const Question = ServiceModel.Question;
@@ -16,67 +17,62 @@ const getServices = async (req, res) => {
 };
 
 const createService = async (req, res) => {
-  const { localImageName, title, description, timeToComplete, questions } =
-    req.body;
-  const questionSchemaArray = [];
-
-  // Check if the image exists
-  const imagePath = path.join("./images", localImageName);
-  if (!fs.existsSync(imagePath)) {
-    return res.status(404).json({ error: "Image does not exist" });
-  }
-
-  if (questions) {
-    questions.forEach((info) => {
-      const answerSchemaArray = info.answers.map((answer) => ({
-        answer: answer.answer,
-        costIncrease: answer.costIncrease,
-        additionalQuestions: answer.additionalQuestions,
-      }));
-
-      const questionSchema = {
-        question: info.question,
-        answers: answerSchemaArray,
-      };
-
-      questionSchemaArray.push(questionSchema);
-    });
-  }
-
   try {
-    const service = await Service.create({
-      localImageName,
-      title,
-      description,
-      timeToComplete,
-      questions: questionSchemaArray,
-    });
-
-    res.status(200).json(service);
+    const token = req.cookies.token;
+    if (!token) {
+      console.log("oof", token);
+      return res.status(401).json({ message: "not logged in" });
+    }
+    const decodedToken = jwt.verify(token, process.env.SECRET);
+    const userID = decodedToken.userID;
+    const adminToken = req.cookies.admin;
+    const decodedAdminToken = jwt.verify(adminToken, process.env.SECRET);
+    const isAdmin = decodedAdminToken.isAdmin;
+    if (isAdmin) {
+      const { service } = req.body;
+      // Check if the image exists
+      const imagePath = path.join("./images", service.localImageName);
+      if (!fs.existsSync(imagePath)) {
+        return res.status(404).json({ error: "Image does not exist" });
+      }
+      const newService = await Service.create(service);
+      newService.save();
+      return res.status(200).json({ newService });
+    }
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: error.message });
   }
 };
 
 const deleteService = async (req, res) => {
-  const { id } = req.params;
-
   try {
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ error: "No such service" });
+    const id = req.params.id;
+    const token = req.cookies.token;
+    if (!token) {
+      return res.status(401).json({ message: "not logged in" });
     }
+    const decodedToken = jwt.verify(token, process.env.SECRET);
+    const userID = decodedToken.userID;
+    const adminToken = req.cookies.admin;
+    const decodedAdminToken = jwt.verify(adminToken, process.env.SECRET);
+    const isAdmin = decodedAdminToken.isAdmin;
+    if (isAdmin) {
+      if (!mongoose.Types.ObjectId.isValid(id)) {
+        return res.status(400).json({ error: "No such service" });
+      }
 
-    const deletedService = await Service.findByIdAndDelete(id);
+      const deletedService = await Service.findByIdAndDelete(id);
 
-    if (deletedService) {
-      res.status(200).json({
-        message: "Service deleted successfully",
-        deletedService,
-      });
-    } else {
-      res.status(404).json({
-        message: "Service not found",
-      });
+      if (deletedService) {
+        res.status(200).json({
+          message: "Service deleted successfully",
+          deletedService,
+        });
+      } else {
+        res.status(404).json({
+          message: "Service not found",
+        });
+      }
     }
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -84,47 +80,35 @@ const deleteService = async (req, res) => {
 };
 
 const updateService = async (req, res) => {
-  const { id } = req.params;
-  const { localImageName, title, description, timeToComplete, questions } =
-    req.body;
-  const questionSchemaArray = [];
-
-  if (questions) {
-    questions.forEach((info) => {
-      const answerSchemaArray = info.answers.map((answer) => ({
-        answer: answer.answer,
-        costIncrease: answer.costIncrease,
-      }));
-
-      const questionSchema = {
-        question: info.question,
-        answers: answerSchemaArray,
-      };
-
-      questionSchemaArray.push(questionSchema);
-    });
-  }
-
   try {
-    const updatedService = await Service.findByIdAndUpdate(
-      id,
-      {
-        localImageName,
-        title,
-        description,
-        timeToComplete,
-        questions: questionSchemaArray,
-      },
-      { new: true, runValidators: true }
-    );
+    const token = req.cookies.token;
+    if (!token) {
+      return res.status(401).json({ message: "not logged in" });
+    }
+    const decodedToken = jwt.verify(token, process.env.SECRET);
+    const userID = decodedToken.userID;
+    const adminToken = req.cookies.admin;
+    const decodedAdminToken = jwt.verify(adminToken, process.env.SECRET);
+    const isAdmin = decodedAdminToken.isAdmin;
+    if (isAdmin) {
+      const { service } = req.body;
+      const updatedService = await Service.findByIdAndUpdate(
+        service._id,
+        service,
+        {
+          new: true,
+          runValidators: true,
+        }
+      );
 
-    if (updatedService) {
-      res.status(200).json(updatedService);
-    } else {
-      res.status(404).json({ message: "Service not found" });
+      if (updatedService) {
+        return res.status(200).send(updatedService);
+      } else {
+        return res.status(404).json({ message: "Service not found" });
+      }
     }
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: error.message });
   }
 };
 

@@ -9,7 +9,11 @@ const geocodingEndpoint = "https://maps.googleapis.com/maps/api/geocode/json";
 async function getCoordinatesFromAddress(address) {
   // Check if the coordinates are already in the cache
   if (addressCache[address]) {
-    console.log(`Using cached coordinates for ${address}`);
+    console.log(
+      `Using cached coordinates for ${address}: ${JSON.stringify(
+        addressCache[address]
+      )}`
+    );
     return addressCache[address];
   }
 

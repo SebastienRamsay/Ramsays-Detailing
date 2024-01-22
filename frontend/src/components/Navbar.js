@@ -10,6 +10,7 @@ const Navbar = () => {
     useContext(AuthContext);
   const { cartLength } = useContext(CartContext);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
   const menuRef = useRef(null);
 
   useEffect(() => {
@@ -100,11 +101,21 @@ const Navbar = () => {
                       {/* Profile Picture and Name */}
                       <div className="mb-3 flex flex-row items-center gap-3 p-3">
                         <h1 className="text-lg">{displayName}</h1>
-                        <img
-                          src={profilePicture}
-                          className="h-11 w-11 rounded-full"
-                          alt="Profile"
-                        />
+                        <span>
+                          <div
+                            className={`h-11 w-11 rounded-full bg-secondary-0 ${
+                              imageLoaded ? "hidden" : "block"
+                            }`}
+                          />
+                          <img
+                            src={profilePicture}
+                            className={`h-11 w-11 rounded-full ${
+                              imageLoaded ? "block" : "hidden"
+                            }`}
+                            alt="Profile"
+                            onLoad={() => setImageLoaded(true)}
+                          />
+                        </span>
                       </div>
 
                       {/* group-hover: Profile Picture and Name With Logout */}
@@ -113,11 +124,21 @@ const Navbar = () => {
                           <h1 className="whitespace-nowrap text-lg">
                             {displayName}
                           </h1>
-                          <img
-                            src={profilePicture}
-                            className="h-11 w-11 rounded-full"
-                            alt="Profile"
-                          />
+                          <span>
+                            <div
+                              className={`h-11 w-11 rounded-full bg-secondary-0 ${
+                                imageLoaded ? "hidden" : "block"
+                              }`}
+                            />
+                            <img
+                              src={profilePicture}
+                              className={`h-11 w-11 rounded-full ${
+                                imageLoaded ? "block" : "hidden"
+                              }`}
+                              alt="Profile"
+                              onLoad={() => setImageLoaded(true)}
+                            />
+                          </span>
                         </div>
 
                         <div className="button mx-auto my-auto w-[87px] bg-red-700 text-center">
@@ -208,11 +229,21 @@ const Navbar = () => {
                     >
                       <div className="flex flex-col gap-4">
                         <div className="mx-auto flex flex-row-reverse items-center gap-3">
-                          <img
-                            src={profilePicture}
-                            className="h-[55px] w-[55px] rounded-full"
-                            alt="Profile"
-                          />
+                          <span>
+                            <div
+                              className={`h-[55px] w-[55px] rounded-full bg-secondary-0 ${
+                                imageLoaded ? "hidden" : "block"
+                              }`}
+                            />
+                            <img
+                              src={profilePicture}
+                              className={`h-[55px] w-[55px] rounded-full ${
+                                imageLoaded ? "block" : "hidden"
+                              }`}
+                              alt="Profile"
+                              onLoad={() => setImageLoaded(true)}
+                            />
+                          </span>
                           <h1 className="truncate text-xl">{displayName}</h1>
                         </div>
                         <div className="button mx-auto my-auto w-[150px] bg-red-700 text-center text-lg">
@@ -338,7 +369,7 @@ const Navbar = () => {
                     <div
                       className={
                         mobileNavOpen
-                          ? "absolute right-0 top-[70px] z-40 flex w-[300px] origin-right animate-open-menu flex-col gap-6 rounded-l-xl bg-ramsayBlue-0 p-5 nav:top-[105px]"
+                          ? "absolute right-0 top-[70px] z-40 flex w-[325px] origin-right animate-open-menu flex-col gap-6 rounded-l-xl bg-ramsayBlue-0 p-5 nav:top-[105px]"
                           : "hidden"
                       }
                     >
@@ -389,10 +420,9 @@ const Navbar = () => {
                         >
                           <button className="font-bold">About</button>
                         </Link>
-                        <div className="text-sm border border-white rounded-full">
-                          <GoogleButton/>
+                        <div className="rounded-full text-sm sm:hidden">
+                          <GoogleButton />
                         </div>
-                        
                       </div>
 
                       <div className="mx-auto flex flex-row-reverse gap-5">

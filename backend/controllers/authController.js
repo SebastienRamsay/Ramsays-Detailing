@@ -6,10 +6,10 @@ require("../passport");
 const Reader = require("@maxmind/geoip2-node").Reader;
 const jwt = require("jsonwebtoken");
 const User = require("../models/userModel");
-
-function isLoggedIn(req, res, next) {
-  req.user ? next() : res.sendStatus(401);
-}
+const {
+  refreshUserToken,
+  refreshAdminToken,
+} = require("../middleware/requireAuth");
 
 const loggedIn = async function (req, res) {
   try {
@@ -40,73 +40,59 @@ const loggedIn = async function (req, res) {
       console.log("USER IS A GUEST");
       return res.json({ loginType: "guest", adminInfo: { coords } });
     }
+    try {
+      const decodedToken = jwt.verify(token, process.env.SECRET);
+      const userID = decodedToken.userID;
 
-    const decodedToken = jwt.verify(token, process.env.SECRET);
-    const userID = decodedToken.userID;
-    console.dir(decodedToken);
+      const user = await User.findOne({ _id: userID });
 
-    const user = await User.findOne({ _id: userID });
+      let location;
 
-    if (user.clientCodes) {
-      const refreshToken = jwt.verify(
-        user.clientCodes,
-        process.env.SECRET
-      ).refreshToken;
-
-      const now = Math.floor(Date.now() / 1000);
-
-      if (refreshToken.exp < now) {
-        console.log("Refresh token has expired");
-        return res.redirect("/logout");
+      try {
+        location = jwt.verify(user.location, process.env.SECRET).location;
+      } catch (error) {
+        location = "";
       }
-    }
 
-    let location;
-
-    try {
-      location = jwt.verify(user.location, process.env.SECRET).location;
-    } catch (error) {
-      location = "";
-    }
-
-    try {
-      const adminToken = req.cookies.admin;
-      const decodedToken = jwt.verify(adminToken, process.env.SECRET);
-      const isAdmin = decodedToken.isAdmin;
-      if (isAdmin) {
-        console.log("LOGGED IN AS ADMIN");
-        return res.json({
-          loginType: "admin",
-          adminInfo: {
-            distance: user?.distance,
-            location,
-            availableServices: user?.availableServices,
-            coords,
-          },
-        });
+      try {
+        if (user?.isEmployee) {
+          console.log("LOGGED IN AS Employee");
+          return res.json({
+            loginType: "employee",
+            adminInfo: {
+              distance: user?.distance,
+              location,
+              availableServices: user?.services,
+              vacationTime: user?.vacationTime,
+              schedule: user?.schedule,
+              coords,
+            },
+          });
+        }
+      } catch (error) {
+        // user is not an employee
       }
-    } catch (error) {
-      // user is not an admin
-    }
-
-    try {
-      if (user.isEmployee) {
-        console.log("LOGGED IN AS Employee");
-        return res.json({
-          loginType: "employee",
-          adminInfo: {
-            distance: user?.distance,
-            location,
-            availableServices: user?.services,
-            vacationTime: user?.vacationTime,
-            schedule: user?.schedule,
-            coords,
-          },
-        });
+      try {
+        const adminToken = req.cookies.admin;
+        const decodedToken = jwt.verify(adminToken, process.env.SECRET);
+        const isAdmin = decodedToken.isAdmin;
+        if (isAdmin) {
+          console.log("LOGGED IN AS ADMIN");
+          return res.json({
+            loginType: "admin",
+            adminInfo: {
+              distance: user?.distance,
+              location,
+              availableServices: user?.availableServices,
+              coords,
+            },
+          });
+        }
+      } catch (error) {
+        refreshAdminToken();
       }
     } catch (error) {
-      console.log("error logging in as employee", error);
-      // user is not an employee
+      refreshUserToken();
     }
 
     return res.json({ loginType: "google", adminInfo: { coords } });
@@ -131,7 +117,7 @@ const adminAuth = async function (req, res) {
     res.status(200).json({ message: "Admin login successful" });
   } else {
     console.log("FAILED ADMIN LOGIN");
-    res.status(200).json({ message: "Password is Incorrect" });
+    res.status(400).json({ message: "Password is Incorrect" });
   }
 };
 

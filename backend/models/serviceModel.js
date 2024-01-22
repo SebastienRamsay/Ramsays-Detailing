@@ -6,6 +6,10 @@ const answerSchema = new Schema({
     type: String,
     required: true,
   },
+  timeToComplete: {
+    type: Number,
+    required: true,
+  },
   costIncrease: {
     type: Number,
     required: true,
@@ -17,6 +21,10 @@ const answerSchema = new Schema({
           type: String,
           maxLength: 25,
         },
+        description: {
+          type: String,
+          required: true,
+        },
         answers: [
           {
             answer: {
@@ -24,6 +32,11 @@ const answerSchema = new Schema({
               required: true,
             },
             costIncrease: {
+              type: Number,
+              required: true,
+            },
+
+            timeToComplete: {
               type: Number,
               required: true,
             },
@@ -40,6 +53,10 @@ const questionSchema = new Schema({
     type: String,
     required: true,
     maxLength: 25,
+  },
+  description: {
+    type: String,
+    required: true,
   },
   answers: {
     type: [answerSchema],

@@ -33,9 +33,13 @@ app.use((req, res, next) => {
   }
 });
 
-const privateKey = fs.readFileSync("../../ssl/private.key.pem");
-const certificate = fs.readFileSync("../../ssl/domain.cert.pem");
-const ca = fs.readFileSync("../../ssl/intermediate.cert.pem"); // Include intermediate certificates if provided
+const privateKey = fs.readFileSync("../../../../../../ssl/private.key.pem");
+const certificate = fs.readFileSync("../../../../../../ssl/domain.cert.pem");
+const ca = fs.readFileSync("../../../../../../ssl/intermediate.cert.pem");
+
+// const privateKey = fs.readFileSync("../../ssl/private.key.pem");
+// const certificate = fs.readFileSync("../../ssl/domain.cert.pem");
+// const ca = fs.readFileSync("../../ssl/intermediate.cert.pem");
 
 const credentials = { key: privateKey, cert: certificate, ca: ca };
 

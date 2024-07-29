@@ -52,7 +52,7 @@ module.exports = {
       },
       animation: {
         "spin-once": "spin 0.5s linear",
-        "open-menu": "open-menu 0.5s ease-in-out",
+        "open-menu": "open-menu 0.4s ease-in-out",
         "fade-in": "fade-in 0.3s ease-in-out",
         "open-menu-down": "open-menu-down 0.5s ease-in-out",
         "open-menu-spin": "open-menu-spin 0.5s ease-in-out",

@@ -2,25 +2,23 @@ const express = require("express");
 
 const {
   deleteBooking,
-  getAllBookingInfo,
+  getAdminBookings,
   getEmployeeBookings,
   getUserBookings,
-  createBooking,
   setEmployeeEventID,
   unClaimBooking,
   claimBooking,
   setUserEventID,
   busyEvents,
   preCreateBooking,
+  markBookingComplete,
 } = require("../controllers/bookingController");
 
 const router = express.Router();
 
-router.post("/", createBooking);
+// router.post("/", createBooking);
 
 router.post("/pre", preCreateBooking);
-
-router.delete("/", deleteBooking);
 
 router.patch("/setUserEventId", setUserEventID);
 
@@ -30,9 +28,11 @@ router.patch("/claimBooking", claimBooking);
 
 router.patch("/unClaimBooking", unClaimBooking);
 
+router.post("/markBookingComplete", markBookingComplete);
+
 router.get("/", getUserBookings);
 
-router.get("/admin/info", getAllBookingInfo);
+router.get("/admin/info", getAdminBookings);
 
 router.get("/employee", getEmployeeBookings);
 

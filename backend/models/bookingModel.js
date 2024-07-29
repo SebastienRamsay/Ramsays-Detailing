@@ -3,6 +3,10 @@ const Schema = mongoose.Schema;
 
 const bookingSchema = new Schema(
   {
+    status: {
+      type: String,
+      required: false,
+    },
     userId: {
       type: String,
       required: true,
@@ -22,6 +26,22 @@ const bookingSchema = new Schema(
     employeeEventId: {
       type: String,
       required: true,
+    },
+    payment_intent: {
+      type: String,
+      required: false,
+    },
+    transferInfo: {
+      type: String,
+      required: false,
+    },
+    rating: {
+      type: Number,
+      required: false,
+    },
+    comment: {
+      type: String,
+      required: false,
     },
     beforePictures: {
       type: [String],

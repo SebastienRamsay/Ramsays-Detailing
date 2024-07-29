@@ -1,4 +1,5 @@
 import axios from "axios";
+import { DateTime } from "luxon";
 import React, {
   createContext,
   useCallback,
@@ -7,8 +8,9 @@ import React, {
   useRef,
   useState,
 } from "react";
-import AuthContext from "./AuthContext";
 import toast from "react-hot-toast";
+import AuthContext from "./AuthContext";
+import PopupContext from "./PopupContext";
 
 const CartContext = createContext();
 
@@ -22,6 +24,21 @@ function CartContextProvider(props) {
   const [cartLength, setCartLength] = useState(0);
   const [cartContextResponse, setCartResponse] = useState("");
   const { loggedIn } = useContext(AuthContext);
+  const { setReScheduleBusyTimes } = useContext(PopupContext);
+
+  const difference = DateTime.fromISO(cart.selectedDateTime).diff(
+    DateTime.now(),
+    "hours"
+  );
+  const differenceInHours = difference.hours;
+
+  if (differenceInHours <= 48) {
+    // Date is within 48 hours of right now
+    setCart((oldCart) => {
+      oldCart.selectedDateTime = undefined;
+      return { ...oldCart }; // Ensure immutability
+    });
+  }
 
   const getCart = useCallback(async () => {
     try {
@@ -33,7 +50,15 @@ function CartContextProvider(props) {
       );
       if (response.status === 200) {
         const data = response.data;
-        setCart((prev) => ({ ...prev, data }));
+        // Preserve properties from local storage
+        const mergedCart = {
+          ...data,
+          phoneNumber: cart.phoneNumber || "",
+          selectedDateTime: cart.selectedDateTime,
+          createCalendarEvent: cart.createCalendarEvent || false,
+          address: cart.address || "",
+        };
+        setCart(mergedCart);
         setCartLength(data.services?.length || 0);
       } else {
         console.log("Error getting cart: " + response);
@@ -41,9 +66,37 @@ function CartContextProvider(props) {
     } catch (error) {
       console.error("Error fetching cart:", error);
     }
-  }, [setCart, setCartLength]);
+  }, [setCart, setCartLength, cart]);
 
   var isMounted = useRef(false);
+
+  async function fetchBusyTimesForReSchedule(
+    customerLocation,
+    expectedTimeToComplete,
+    serviceNames
+  ) {
+    try {
+      const response = await axios.post(
+        "https://ramsaysdetailing.ca:4000/api/bookings/busyTimes",
+        {
+          customerLocation,
+          expectedTimeToComplete,
+          serviceNames,
+        },
+        {
+          withCredentials: true,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      const busyEvents = response.data;
+      setReScheduleBusyTimes(busyEvents);
+      console.log(busyEvents);
+    } catch (error) {
+      console.error("Error fetching busy events:", error);
+    }
+  }
 
   const fetchBusyTimes = useCallback(
     async ({ customerLocation, expectedTimeToComplete, serviceNames }) => {
@@ -85,6 +138,10 @@ function CartContextProvider(props) {
 
   async function addToCartContext(service) {
     try {
+      if (cart.services.length > 2) {
+        toast.error("You can only book 3 services at a time");
+        return;
+      }
       const response = await axios.post(
         "https://ramsaysdetailing.ca:4000/api/cart",
         {
@@ -100,10 +157,14 @@ function CartContextProvider(props) {
 
       if (response.status === 200) {
         const data = await response.data;
-        console.log("Item added to cart: ", data);
-        setCart(data);
+        const newCart = {
+          phoneNumber: cart.phoneNumber,
+          address: cart.address,
+          createCalendarEvent: cart.createCalendarEvent,
+          ...data,
+        };
+        setCart(newCart);
         toast.success("Item added to cart");
-        console.log(cartLength + 1);
         setCartLength(cartLength + 1);
       } else {
         toast.error("failed to add item to cart");
@@ -134,8 +195,13 @@ function CartContextProvider(props) {
 
       if (response.status === 200) {
         const data = response.data;
-        console.log("Item removed from cart: ", data);
-        setCart(data);
+        const newCart = {
+          phoneNumber: cart.phoneNumber,
+          address: cart.address,
+          createCalendarEvent: cart.createCalendarEvent,
+          ...data,
+        };
+        setCart(newCart);
         setCartLength(cartLength - 1);
         toast.success("Item removed from cart");
       } else {
@@ -179,6 +245,7 @@ function CartContextProvider(props) {
     <CartContext.Provider
       value={{
         fetchBusyTimes,
+        fetchBusyTimesForReSchedule,
         cart,
         setCart,
         cartLength,

@@ -13,13 +13,13 @@ root.render(
   // <React.StrictMode>
   <ServicesContextProvider>
     <AuthContextProvider>
-      <CartContextProvider>
-        <BookingsContextProvider>
-          <PopupContextProvider>
+      <PopupContextProvider>
+        <CartContextProvider>
+          <BookingsContextProvider>
             <App />
-          </PopupContextProvider>
-        </BookingsContextProvider>
-      </CartContextProvider>
+          </BookingsContextProvider>
+        </CartContextProvider>
+      </PopupContextProvider>
     </AuthContextProvider>
   </ServicesContextProvider>
   // </React.StrictMode>

@@ -24,6 +24,14 @@ const userSchema = new Schema(
       type: Boolean,
       required: true,
     },
+    onboardingComplete: {
+      type: Boolean,
+      required: false,
+    },
+    stripeId: {
+      type: String,
+      required: false,
+    },
     location: {
       type: String,
       required: false,

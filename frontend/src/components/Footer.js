@@ -6,7 +6,6 @@ const Footer = () => {
       <h4 className="pb-5 font-title text-2xl font-bold">RAMSAY'S DETAILING</h4>
       <p className="">sebastien.ramsay@gmail.com</p>
       <p>613-769-2098</p>
-      <p>7536 Dwyer Hill Road, Burritts Rapids</p>
 
       <div className="flex items-center gap-4 pt-3">
         <a

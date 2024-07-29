@@ -36,7 +36,7 @@ const removeFromCart = async (req, res) => {
   try {
     const encoded_user_id = req.cookies.token;
     const user_id = jwt.verify(encoded_user_id, process.env.SECRET).userID;
-    const { _id } = req.body;
+    const _id = req.body._id;
     const cart = await Cart.removeFromCart(user_id, _id);
     res.status(200).json(cart);
   } catch (error) {

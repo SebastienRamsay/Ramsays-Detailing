@@ -7,10 +7,8 @@ import CartContext from "../context/CartContext";
 
 const DateTimePicker = () => {
   const { setCart, cart } = useContext(CartContext);
-  console.log(cart.selectedDateTime);
   const busyTimes = cart.busyTimes;
-  const twoHoursLater = DateTime.local().plus({ hours: 2 });
-  console.log(busyTimes);
+  const fortyEightHoursLater = DateTime.local().plus({ hours: 48 });
   if (typeof busyTimes !== "string" && busyTimes !== undefined) {
     var excludeTimes = [];
     if (busyTimes.length > 0) {
@@ -38,7 +36,7 @@ const DateTimePicker = () => {
           onChange={(dateTime) => {
             setCart((prev) => ({ ...prev, selectedDateTime: dateTime }));
           }}
-          minDate={twoHoursLater.toJSDate()}
+          minDate={fortyEightHoursLater.toJSDate()}
           showTimeSelect
           timeFormat="h:mm aa"
           timeIntervals={15}

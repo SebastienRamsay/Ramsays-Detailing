@@ -3,25 +3,26 @@ import PopupContext from "../context/PopupContext";
 import ServicesContext from "../context/ServicesContext";
 import { useNavigate } from "react-router-dom";
 
-const DeleteServicePopup = ({}) => {
-  const { isOpen, setIsOpen, service } = useContext(PopupContext);
+const DeleteServicePopup = () => {
+  const { deleteServicePopupOpen, setDeleteServicePopupOpen, service } =
+    useContext(PopupContext);
   const { deleteService } = useContext(ServicesContext);
   const navigate = useNavigate();
 
   const handleClose = () => {
-    setIsOpen(false);
+    setDeleteServicePopupOpen(false);
     console.log(service);
   };
 
   const handleConfirm = () => {
-    setIsOpen(false);
+    setDeleteServicePopupOpen(false);
     deleteService(service._id);
     navigate(`/services`);
   };
 
   return (
     <>
-      {isOpen && (
+      {deleteServicePopupOpen && (
         <div className="fixed inset-0 z-10 flex items-center justify-center bg-gray-500 bg-opacity-75">
           <div className="rounded-lg bg-white p-8 shadow-md">
             <div className="flex justify-end">

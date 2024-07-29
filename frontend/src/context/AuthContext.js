@@ -21,6 +21,54 @@ function AuthContextProvider(props) {
   const [profilePicture, setProfilePicture] = useState();
   const isMounted = useRef(false);
 
+  const connectStripeAccount = async () => {
+    try {
+      const response = await axios.post(
+        "https://ramsaysdetailing.ca:4000/api/stripe/connectStripeAccount",
+        {},
+        {
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      if (response.status === 200) {
+        if (response.data.url) {
+          return response.data.url;
+        } else {
+          toast.success(response.data);
+        }
+      } else {
+        toast.error("Error Creating Creating Account");
+      }
+    } catch (error) {
+      console.log("Error requesting to update employee info: " + error);
+    }
+  };
+
+  const deleteStripeAccount = async () => {
+    try {
+      const response = await axios.delete(
+        "https://ramsaysdetailing.ca:4000/api/stripe/deleteStripeAccount",
+        {},
+        {
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      if (response.status === 200) {
+        toast.success(response.data);
+      } else {
+        toast.error("Error Deleting Stipe Account");
+      }
+    } catch (error) {
+      console.log("Error Deleting Stipe Account: " + error);
+    }
+  };
+
   async function updateEmployeeInfo(location, services, distance, userId) {
     if (location.length < 10) {
       return;
@@ -201,6 +249,8 @@ function AuthContextProvider(props) {
         requestUpdateEmployeeInfo,
         updateEmployeeInfo,
         coords,
+        deleteStripeAccount,
+        connectStripeAccount,
       }}
     >
       {props.children}

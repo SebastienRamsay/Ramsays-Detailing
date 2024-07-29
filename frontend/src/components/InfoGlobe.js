@@ -1,10 +1,10 @@
-import React, { useContext, useEffect, useRef, useState } from "react";
-import * as THREE from "three";
-import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import gsap from "gsap";
-import AuthContext from "../context/AuthContext";
-import ThreeGlobe from "three-globe";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
+import * as THREE from "three";
+import ThreeGlobe from "three-globe";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import AuthContext from "../context/AuthContext";
 
 const sizes = {
   width: 800,
@@ -98,8 +98,8 @@ export default function InfoGlobe() {
       displacementMap: new THREE.TextureLoader().load(
         "/images/texture/earthbump.jpg"
       ),
-      displacementScale: 0.1,
-      bumpScale: 0.1,
+      displacementScale: 0.05,
+      bumpScale: 0.05,
     });
 
     earthMesh = new THREE.Mesh(earthGeometry, earthMaterial);
@@ -365,8 +365,8 @@ export default function InfoGlobe() {
           <b>World Wide Detailing</b>
         </h1>
         <p className="text-center text-xl">
-          Ramasy's Detailing is world wide buisness, <br /> we are dedicated to
-          providing jobs around the globe.
+          Ramasy's Detailing plans to be a world wide buisness. <br /> We are
+          dedicated to providing jobs around the globe.
         </p>
         <button
           onClick={() => toggleZoomedIn()}

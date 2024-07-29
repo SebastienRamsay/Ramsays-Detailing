@@ -7,7 +7,7 @@ import BookingsContext from "../context/BookingsContext";
 const AdminLogin = () => {
   const [password, setPassword] = useState("");
   const { getLoggedIn } = useContext(AuthContext);
-  const { fetchBookings } = useContext(BookingsContext);
+  const { fetchAdminBookings } = useContext(BookingsContext);
   const inputRef = useRef(null);
 
   // const {login, error, isLoading} = useLogin()
@@ -35,8 +35,8 @@ const AdminLogin = () => {
         }
       );
       if (response.status === 200) {
-        getLoggedIn();
-        fetchBookings();
+        await fetchAdminBookings();
+        await getLoggedIn();
       }
     } catch (error) {
       console.log("Error logging in as admin: " + error);

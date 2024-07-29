@@ -66,6 +66,8 @@ const loggedIn = async function (req, res) {
               vacationTime: user?.vacationTime,
               schedule: user?.schedule,
               coords,
+              stripeId: user.stripeId,
+              onboardingComplete: user.onboardingComplete,
             },
           });
         }

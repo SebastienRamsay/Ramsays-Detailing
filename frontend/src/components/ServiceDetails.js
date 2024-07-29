@@ -13,7 +13,7 @@ const ServiceDetails = ({ service }) => {
       />
       <img
         src={imagePath}
-        alt="Service Image"
+        alt="Service"
         className={`${imageLoaded ? "block" : "hidden"}`}
         onLoad={() => setImageLoaded(true)}
       />

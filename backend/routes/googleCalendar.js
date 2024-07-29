@@ -10,13 +10,6 @@ const User = require("../models/userModel");
 const Detailing = require("../models/bookingModel");
 const { google } = require("googleapis");
 
-const keyFile = path.join(
-  // get location of service account google auth file
-  __dirname,
-  "..",
-  "ramsays-detailing-b3135e3f53f5.json"
-);
-
 // run a freebusy check on this calendar using this freeBusyQuery
 const freeBusy = async function (calendar, freeBusyQuery) {
   const response = await calendar.freebusy.query(freeBusyQuery);
@@ -149,58 +142,6 @@ router.delete("/calendar/cancel", async function (req, res) {
     console.log(error);
     res.status(500).json(error);
     return error;
-  }
-});
-
-router.get("/calendar", async function (req, res) {
-  try {
-    const userID = req.cookies.user;
-    let guestName = null;
-    let isGuest = false;
-
-    if (!userID) {
-      console.log("User not logged in");
-      return res.send("User not logged in");
-    }
-
-    if (userID === "guest") {
-      guestName = req.cookies.name;
-      isGuest = true;
-    }
-
-    let detailings;
-
-    if (!isGuest) {
-      const decodedUserID = jwt.verify(userID, process.env.SECRET);
-      const user = await User.findOne({ _id: decodedUserID.user });
-      detailings = await Detailing.find({ email: user.email });
-    } else {
-      detailings = await Detailing.find({ userId: guestName });
-    }
-
-    return res.json(detailings);
-  } catch (error) {
-    console.log(error);
-    return res.status(500).json({ error: "Internal Server Error" });
-  }
-});
-
-router.get("/admin/calendar", async function (req, res) {
-  try {
-    const isAdmin = req.cookies.admin;
-
-    let detailings;
-
-    if (isAdmin) {
-      detailings = await Detailing.find();
-    } else {
-      return res.send("User is not an admin");
-    }
-
-    return res.json(detailings);
-  } catch (error) {
-    console.log(error);
-    return res.status(500).json({ error: "Internal Server Error" });
   }
 });
 

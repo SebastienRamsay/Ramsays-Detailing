@@ -6,20 +6,39 @@ import React, {
   useRef,
   useState,
 } from "react";
-import AuthContext from "./AuthContext";
 import toast from "react-hot-toast";
+import AuthContext from "./AuthContext";
+const { DateTime } = require("luxon");
 
 const BookingsContext = createContext();
 
 function BookingsContextProvider(props) {
-  const [bookings, setBookings] = useState([]);
-  const [claimedBookings, setClaimedBookings] = useState([]);
+  const [bookings, setBookings] = useState({});
   const { loggedIn, isAdmin, isEmployee } = useContext(AuthContext);
 
   async function fetchBookings() {
     try {
       const response = await axios.get(
         "https://ramsaysdetailing.ca:4000/api/bookings",
+        {
+          withCredentials: true,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      setBookings(response.data);
+      console.log(response.data);
+    } catch (error) {
+      console.error("Error fetching bookings:", error);
+    }
+  }
+
+  async function fetchAdminBookings() {
+    try {
+      const response = await axios.get(
+        "https://ramsaysdetailing.ca:4000/api/bookings/admin/info",
         {
           withCredentials: true,
           headers: {
@@ -46,10 +65,18 @@ function BookingsContextProvider(props) {
           },
         }
       );
-
-      setBookings(response.data.bookings);
-      setClaimedBookings(response.data.claimedBookings);
-      console.log(response.data);
+      if (response.status === 200) {
+        setBookings({
+          unClaimedBookings: response.data.unClaimedBookings,
+          claimedBookings: response.data.claimedBookings,
+          completeBookings: response.data.completeBookings,
+          confirmedBookings: response.data.confirmedBookings,
+        });
+        console.log(response.data);
+      } else {
+        console.log(response.data);
+        console.log("Error Fetching Booking Data");
+      }
     } catch (error) {
       console.error("Error fetching bookings:", error);
     }
@@ -72,12 +99,17 @@ function BookingsContextProvider(props) {
     const employeeId = idResponse.data;
     if (idResponse.status === 200) {
       toast.success("Booking Claimed");
-      var newBookings = bookings.filter((b) => b._id !== booking._id);
-      var newClaimedBookings = claimedBookings;
+      var newBookings = bookings.unClaimedBookings.filter(
+        (b) => b._id !== booking._id
+      );
+      var newClaimedBookings = bookings.claimedBookings;
       booking.employeeId = employeeId;
       newClaimedBookings.push(booking);
-      setBookings(newBookings);
-      setClaimedBookings(newClaimedBookings);
+      setBookings((prevBookings) => ({
+        ...prevBookings,
+        claimedBookings: newClaimedBookings,
+        unClaimedBookings: newBookings,
+      }));
     }
   };
 
@@ -99,69 +131,174 @@ function BookingsContextProvider(props) {
     );
     if (idResponse.status === 200) {
       toast.success("Booking Un-Claimed");
-      const newBookings = [...bookings]; // Create a new array using spread operator
-      const newClaimedBookings = claimedBookings.filter(
+      const newBookings = [...bookings.unClaimedBookings]; // Create a new array using spread operator
+      const newClaimedBookings = bookings.claimedBookings.filter(
         (b) => b._id !== booking._id
       );
       booking.employeeId = "none";
       newBookings.push(booking);
       console.log(newBookings, newClaimedBookings);
-      setBookings(newBookings);
-      setClaimedBookings(newClaimedBookings);
+      setBookings((prevBookings) => ({
+        ...prevBookings,
+        unClaimedBookings: newBookings,
+        claimedBookings: newClaimedBookings,
+      }));
+    }
+  };
+
+  const markBookingComplete = async (booking) => {
+    if (!booking?.beforePictures || booking.beforePictures.length < 3) {
+      toast.error("Please upload 4 or more before pictures");
+      return;
+    }
+    if (!booking?.afterPictures || booking.afterPictures.length < 3) {
+      toast.error("Please upload 4 or more after pictures");
+      return;
+    }
+    const bookingCompleteResponse = await axios.post(
+      "https://ramsaysdetailing.ca:4000/api/bookings/markBookingComplete",
+      {
+        bookingId: booking._id,
+      },
+      {
+        withCredentials: true, // Include cookies in the request
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    if (bookingCompleteResponse.status === 200) {
+      toast.success("Booking Marked Complete");
+      const newBooking = { ...booking, status: "Complete" };
+      setBookings((prevBookings) => ({
+        ...prevBookings,
+        claimedBookings: prevBookings.claimedBookings.filter(
+          (b) => b.id === booking._id
+        ),
+        completeBookings: [...prevBookings.completeBookings, newBooking],
+      }));
+    }
+  };
+
+  const payoutEmployee = async (booking) => {
+    if (booking?.status !== "Complete") {
+      toast.error("Booking Not Complete");
+      return;
+    }
+    // if (!isAdmin) {
+    //   toast.error("NOT AN ADMIN");
+    //   return;
+    // }
+    const bookingCompleteResponse = await axios.post(
+      "https://ramsaysdetailing.ca:4000/api/stripe/payoutEmployee",
+      {
+        bookingId: booking._id,
+        comment: booking.comment,
+        rating: booking.rating,
+      },
+      {
+        withCredentials: true, // Include cookies in the request
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    if (bookingCompleteResponse.status === 200) {
+      toast.success("Booking Marked Confirmed");
+      const newBooking = { ...booking, status: "Confirmed" };
+      if (isAdmin) {
+        setBookings((prevBookings) => ({
+          ...prevBookings,
+          completeBookings: prevBookings.completeBookings.filter(
+            (b) => b.id === booking._id
+          ),
+          confirmedBookings: [...prevBookings.confirmedBookings, newBooking],
+        }));
+      } else {
+        setBookings((prevBookings) =>
+          prevBookings.map((b) => (b._id === booking._id ? newBooking : b))
+        );
+      }
     }
   };
 
   async function deleteBooking(booking, isEmployee) {
     console.log(booking, isEmployee);
+    if (isEmployee) {
+      toast.error("Employees can't delete bookings");
+      return;
+    }
+    if (
+      booking.status !== "Un-Paid" &&
+      DateTime.fromISO(booking.date).diff(DateTime.now(), "hours").hours < 48
+    ) {
+      toast.error("Can't refund bookings within 48 hours from now");
+      return;
+    }
     try {
-      if (
-        (booking.userEventId !== "none") |
-        (booking.employeeEventId !== "none")
-      ) {
-        const calendarResponse = await axios.delete(
-          "https://ramsaysdetailing.ca:4000/calendar/cancel",
-          {
-            withCredentials: true, // Include cookies in the request
-            headers: {
-              "Content-Type": "application/json",
-            },
-            data: {
-              employeeEventId: booking.employeeEventId,
-              employeeId: booking.employeeId,
-              userEventId: booking.userEventId,
-              userId: booking.userId,
-              bookingId: booking._id,
-            },
-          }
-        );
-        if (calendarResponse.status === 200) {
-          toast.success("Booking Removed From Calendar");
-        }
-      }
-      const bookingResponse = await axios.delete(
-        "https://ramsaysdetailing.ca:4000/api/bookings",
+      console.log(booking._id);
+      const refundResponse = await axios.delete(
+        "https://ramsaysdetailing.ca:4000/api/stripe/refundCheckoutSession",
         {
-          withCredentials: true,
+          data: { _id: booking._id }, // Pass data as the second argument
+          withCredentials: true, // Include cookies in the request
           headers: {
             "Content-Type": "application/json",
           },
-          data: {
-            bookingId: booking._id,
-            userId: booking.userId,
-            employeeId: booking.employeeId,
-          },
         }
       );
-      if (bookingResponse.status === 200) {
+      if (refundResponse.status === 200) {
+        toast.success("Booking Refunded");
+        if (
+          (booking.userEventId !== "none") | // Calendar event exists
+          (booking.employeeEventId !== "none")
+        ) {
+          const calendarResponse = await axios.delete(
+            "https://ramsaysdetailing.ca:4000/calendar/cancel",
+            {
+              data: {
+                employeeEventId: booking.employeeEventId,
+                employeeId: booking.employeeId,
+                userEventId: booking.userEventId,
+                userId: booking.userId,
+                bookingId: booking._id,
+              },
+            },
+            {
+              withCredentials: true, // Include cookies in the request
+              headers: {
+                "Content-Type": "application/json",
+              },
+            }
+          );
+          if (calendarResponse.status === 200) {
+            toast.success("Booking Removed From Calendar");
+          }
+        }
+
         toast.success("Booking Deleted");
-        var newBookings = bookings.filter((b) => b._id !== booking._id);
-        var newClaimedBookings = claimedBookings.filter(
-          (b) => b._id !== booking._id
-        );
-        console.log(newBookings);
-        console.log(newClaimedBookings);
-        setBookings(newBookings);
-        setClaimedBookings(newClaimedBookings);
+        if (isAdmin) {
+          const newBookings = bookings.unClaimedBookings.filter(
+            (b) => b._id !== booking._id
+          );
+          const newClaimedBookings = bookings.claimedBookings.filter(
+            (b) => b._id !== booking._id
+          );
+          console.log(newBookings);
+          console.log(newClaimedBookings);
+          setBookings((prevBookings) => ({
+            ...prevBookings,
+            unClaimedBookings: newBookings,
+            claimedBookings: newClaimedBookings,
+          }));
+        } else {
+          const newBookings = bookings.filter((b) => b._id !== booking._id);
+          setBookings(newBookings);
+        }
+      } else {
+        console.log(refundResponse.data);
+        toast.error("Failed To Cancel Booking");
+        return;
       }
     } catch (error) {
       console.log("Error when deleting event: " + error);
@@ -185,6 +322,7 @@ function BookingsContextProvider(props) {
     );
     const calendarData = await calendarResponse.data;
     if (calendarData === "User is busy") {
+      toast.error("User is busy");
       return;
     }
 
@@ -205,7 +343,9 @@ function BookingsContextProvider(props) {
       );
       if (idResponse.status === 200) {
         var newBookings = [];
-        newBookings = bookings.filter((b) => b._id !== booking._id);
+        newBookings = bookings.unClaimedBookings.filter(
+          (b) => b._id !== booking._id
+        );
         booking.userEventId = calendarData;
         newBookings.push(booking);
         console.log(newBookings);
@@ -246,7 +386,9 @@ function BookingsContextProvider(props) {
       );
       if (idResponse.status === 200) {
         var newBookings = [];
-        newBookings = bookings.filter((b) => b._id !== booking._id);
+        newBookings = bookings.unClaimedBookings.filter(
+          (b) => b._id !== booking._id
+        );
         booking.userEventId = "none";
         newBookings.push(booking);
         console.log(newBookings);
@@ -290,13 +432,16 @@ function BookingsContextProvider(props) {
       );
       if (idResponse.status === 200) {
         var newClaimedBookings = [];
-        newClaimedBookings = claimedBookings.filter(
+        newClaimedBookings = bookings.claimedBookings.filter(
           (b) => b._id !== booking._id
         );
         booking.employeeEventId = "none";
         newClaimedBookings.push(booking);
         console.log(booking);
-        setClaimedBookings(newClaimedBookings);
+        setBookings((prevBookings) => ({
+          ...prevBookings,
+          claimedBookings: newClaimedBookings,
+        }));
       }
     }
   }
@@ -336,23 +481,50 @@ function BookingsContextProvider(props) {
       );
       if (idResponse.status === 200) {
         var newClaimedBookings = [];
-        newClaimedBookings = claimedBookings.filter(
+        newClaimedBookings = bookings.claimedBookings.filter(
           (b) => b._id !== booking._id
         );
         booking.employeeEventId = calendarData;
         newClaimedBookings.push(booking);
         console.log(booking);
-        setClaimedBookings(newClaimedBookings);
+        setBookings((prevBookings) => ({
+          ...prevBookings,
+          claimedBookings: newClaimedBookings,
+        }));
       }
     }
   }
 
-  var isMounted = useRef(false);
+  async function rescheduleBooking(booking, dateTime) {
+    try {
+      const response = await axios.patch(
+        "https://ramsaysdetailing.ca:4000/api/bookings/reScheduleBooking",
+        {
+          dateTime,
+          bookingId: booking._id,
+        },
+        {
+          withCredentials: true, // Include cookies in the request
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      if (response.status === 200) {
+        toast.success("booking re-scheduled");
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }
 
+  var isMounted = useRef(false);
   useEffect(() => {
     if (!isMounted.current && loggedIn !== undefined) {
       // Run this block only when the component is mounted for the first time
-      if (isEmployee || isAdmin) {
+      if (isAdmin) {
+        fetchAdminBookings();
+      } else if (isEmployee) {
         fetchEmployeeBookings();
       } else if (loggedIn) {
         fetchBookings();
@@ -365,8 +537,7 @@ function BookingsContextProvider(props) {
     <BookingsContext.Provider
       value={{
         bookings,
-        claimedBookings,
-        setClaimedBookings,
+        fetchAdminBookings,
         unClaimBooking,
         claimBooking,
         setBookings,
@@ -376,6 +547,9 @@ function BookingsContextProvider(props) {
         removeBookingFromUserCalendar,
         removeBookingFromEmployeeCalendar,
         addBookingToEmployeeCalendar,
+        markBookingComplete,
+        payoutEmployee,
+        rescheduleBooking,
       }}
     >
       {props.children}

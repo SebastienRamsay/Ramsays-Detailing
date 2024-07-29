@@ -1,47 +1,49 @@
+import { loadStripe } from "@stripe/stripe-js";
 import axios from "axios";
-import { useCallback, useContext, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useCallback, useContext, useState } from "react";
+import toast from "react-hot-toast";
 import DateTimePicker from "../components/DateTimePicker";
 import AuthContext from "../context/AuthContext";
 import BookingsContext from "../context/BookingsContext";
 import CartContext from "../context/CartContext";
-import toast from "react-hot-toast";
-import { loadStripe } from "@stripe/stripe-js";
+const { DateTime } = require("luxon");
 
 const Cart = () => {
-  const navigate = useNavigate();
   const imageDirectory = "https://ramsaysdetailing.ca:4000/images/";
   const stripePromise = loadStripe(
     "pk_test_51NKxGTDXNQXcJQtnMzzJXLcE04Xi9B5eRt2koClKaWBUjJ7PZk9izcjtbkL57emaTo8GQBmHSOwwmTuqqp2pmsxX00Vhvkda9F"
   );
 
-  const {
-    cart,
-    setCart,
-    removeFromCartContext,
-    selectedDateTime,
-    fetchBusyTimes,
-    clearCartContext,
-  } = useContext(CartContext);
-  const { fetchBookings, bookings } = useContext(BookingsContext);
+  const { cart, setCart, removeFromCartContext, fetchBusyTimes } =
+    useContext(CartContext);
+  const { bookings } = useContext(BookingsContext);
 
-  const { isEmployee } = useContext(AuthContext);
-
+  const { isEmployee, isAdmin } = useContext(AuthContext);
+  console.log(cart);
   // var [addressValid, setAddressValid] = useState(true);
   var [addressSuggestions, setAddressSuggestions] = useState([]);
 
-  useEffect(() => {
-    const query = new URLSearchParams(window.location.search);
+  // Function to format phone number input
+  const formatPhoneNumber = (input) => {
+    // Remove non-numeric characters
+    const cleaned = input.replace(/\D/g, "");
 
-    if (query.get("success")) {
-      createBooking();
-      console.log("Payment Complete", cart);
-      toast.success("Payment Complete");
+    // Format phone number
+    let formatted = "";
+    if (cleaned.length >= 4) {
+      formatted += `(${cleaned.slice(0, 3)})`;
+    } else {
+      return cleaned;
     }
-    if (query.get("canceled")) {
-      toast.error("Payment Canceled");
+    if (cleaned.length > 3) {
+      formatted += `-${cleaned.slice(3, 6)}`;
     }
-  }, [navigate]);
+    if (cleaned.length > 6) {
+      formatted += `-${cleaned.slice(6, 10)}`;
+    }
+
+    return formatted;
+  };
 
   function isValidPhoneNumber(phoneNumber) {
     if (
@@ -79,25 +81,42 @@ const Cart = () => {
       toast.error("Please Pick A Date And Time");
       return;
     }
-    var numberOfUnClaimedBookings = 0;
-    const maxUnClaimedBookings = 1;
-    bookings.map((booking) => {
-      if (booking.employeeId === "none") {
-        numberOfUnClaimedBookings++;
-      }
-      return booking;
-    });
-
-    if (numberOfUnClaimedBookings >= maxUnClaimedBookings) {
-      toast.error(
-        "Too Many Un-Claimed Bookings, Wait Until Your Previous Booking Has Been Claimed By An Employee"
-      );
-      return;
-    }
-
     if (isEmployee) {
       toast.error("Employees Cannot Create Bookings");
       return;
+    }
+    if (!isAdmin) {
+      var numberOfUnClaimedBookings = 0;
+      var numberOfUnPaidBookings = 0;
+      const maxUnClaimedBookings = 1;
+      const maxUnPaidBookings = 1;
+      bookings.map((booking) => {
+        if (booking.employeeId === "none" && booking.status === "Un-Claimed") {
+          numberOfUnClaimedBookings++;
+        }
+        if (booking.status === "Un-Paid") {
+          numberOfUnPaidBookings++;
+        }
+        return booking;
+      });
+      if (numberOfUnClaimedBookings >= maxUnClaimedBookings) {
+        toast.error(
+          "Too Many Un-Claimed Bookings, Wait Until Your Previous Booking Has Been Claimed By An Employee"
+        );
+        return;
+      }
+      if (numberOfUnPaidBookings >= maxUnPaidBookings) {
+        toast.error(
+          "Too Many Un-Paid Bookings. Please retry payment or cancel the un-paid booking"
+        );
+        return;
+      }
+      const jsDate = new Date(cart.selectedDateTime);
+      const date = DateTime.fromJSDate(jsDate);
+      if (date.diff(DateTime.now(), "hours").hours < 48) {
+        toast.error("Can't create a booking within 48 hours from now");
+        return;
+      }
     }
 
     try {
@@ -125,72 +144,6 @@ const Cart = () => {
     }
   }
 
-  async function createBooking() {
-    try {
-      console.log(selectedDateTime);
-      const bookingResponse = await axios.post(
-        "https://ramsaysdetailing.ca:4000/api/bookings",
-        {
-          cart,
-          selectedDateTime: cart.selectedDateTime,
-        },
-        {
-          withCredentials: true, // Include cookies in the request
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      const bookingData = bookingResponse.data;
-      if (bookingResponse.status === 200) {
-        toast.success("Booking Created");
-        if (cart.createCalendarEvent) {
-          const calendarResponse = await axios.post(
-            "https://ramsaysdetailing.ca:4000/calendar",
-            {
-              cart,
-              selectedDateTime: cart.selectedDateTime,
-            },
-            {
-              withCredentials: true, // Include cookies in the request
-              headers: {
-                "Content-Type": "application/json",
-              },
-            }
-          );
-          const calendarData = calendarResponse.data;
-
-          if (calendarResponse.status === 200) {
-            toast.success("Booking Added To Your Google Calendar");
-            await axios.patch(
-              "https://ramsaysdetailing.ca:4000/api/bookings/setUserEventID",
-              {
-                userEventId: calendarData,
-                bookingId: bookingData._id,
-              },
-              {
-                withCredentials: true, // Include cookies in the request
-                headers: {
-                  "Content-Type": "application/json",
-                },
-              }
-            );
-          } else {
-            console.log(calendarData);
-          }
-        }
-        clearCartContext();
-        fetchBookings();
-        navigate("/bookings");
-      } else {
-        console.error(bookingData);
-        toast.error(bookingData);
-      }
-    } catch (error) {
-      console.error("Error occurred while creating calendar event:", error);
-    }
-  }
-
   const handleCheckout = async () => {
     try {
       const items = cart.services.map((service) => {
@@ -208,9 +161,10 @@ const Cart = () => {
 
       // Initiate Stripe Checkout session and get the session ID
       const sessionResponse = await axios.post(
-        "https://ramsaysdetailing.ca:4000/stripe/createCheckoutSession",
+        "https://ramsaysdetailing.ca:4000/api/stripe/createCheckoutSession",
         {
           items,
+          cart,
         },
         {
           headers: {
@@ -249,73 +203,79 @@ const Cart = () => {
     });
   };
 
-  const handleAddressSuggestions = useCallback(async (e) => {
-    const inputAddress = e.target.value;
-    setCart((prev) => ({ ...prev, address: inputAddress }));
+  const handleAddressSuggestions = useCallback(
+    async (e) => {
+      const inputAddress = e.target.value;
+      setCart((prev) => ({ ...prev, address: inputAddress }));
 
-    if (inputAddress.length < 5) {
-      setAddressSuggestions([]);
-      return;
-    }
+      if (inputAddress.length < 5) {
+        setAddressSuggestions([]);
+        return;
+      }
 
-    if (inputAddress.trim() === "") {
-      setAddressSuggestions([]);
-      return;
-    }
+      if (inputAddress.trim() === "") {
+        setAddressSuggestions([]);
+        return;
+      }
 
-    try {
-      const response = await fetch(
-        `https://ramsaysdetailing.ca:4000/places/autocomplete?input=${encodeURIComponent(
-          inputAddress
-        )}`,
-        {
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      try {
+        const response = await fetch(
+          `https://ramsaysdetailing.ca:4000/places/autocomplete?input=${encodeURIComponent(
+            inputAddress
+          )}`,
+          {
+            credentials: "include",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
 
-      if (response.status === 200) {
-        try {
-          const data = await response.json();
+        if (response.status === 200) {
+          try {
+            const data = await response.json();
 
-          if (data.status === "OK") {
-            setAddressSuggestions(
-              data.predictions.map((prediction) => prediction.description)
-            );
-          } else {
+            if (data.status === "OK") {
+              setAddressSuggestions(
+                data.predictions.map((prediction) => prediction.description)
+              );
+            } else {
+              setAddressSuggestions([]);
+            }
+          } catch (error) {
+            console.error("Error occurred while parsing response:", error);
             setAddressSuggestions([]);
           }
-        } catch (error) {
-          console.error("Error occurred while parsing response:", error);
+        } else if (response.status === 304) {
+          // Handle the case where the data has not been modified
+          // Use the cached data or take appropriate action
+        } else {
+          // Handle other error cases
+          console.error(
+            "Error occurred while fetching address suggestions:",
+            response.status
+          );
           setAddressSuggestions([]);
         }
-      } else if (response.status === 304) {
-        // Handle the case where the data has not been modified
-        // Use the cached data or take appropriate action
-      } else {
-        // Handle other error cases
+      } catch (error) {
         console.error(
           "Error occurred while fetching address suggestions:",
-          response.status
+          error
         );
         setAddressSuggestions([]);
       }
-    } catch (error) {
-      console.error(
-        "Error occurred while fetching address suggestions:",
-        error
-      );
-      setAddressSuggestions([]);
-    }
-  }, []);
+    },
+    [setCart]
+  );
 
-  const handleAddressChange = useCallback(async (e) => {
-    setCart((prev) => ({ ...prev, address: e.target.value }));
-    // const isValid = await confirmAddressExists(address);
-    // setAddressValid(isValid);``
-  }, []);
+  const handleAddressChange = useCallback(
+    async (e) => {
+      setCart((prev) => ({ ...prev, address: e.target.value }));
+      // const isValid = await confirmAddressExists(address);
+      // setAddressValid(isValid);``
+    },
+    [setCart]
+  );
   // async function confirmAddressExists(address) {
   //   try {
   //     const response = await fetch(`/confirm-address?address=${encodeURIComponent(address)}`);
@@ -423,8 +383,8 @@ const Cart = () => {
               <div>
                 <input
                   type="text"
-                  placeholder=" Phone Number"
-                  value={cart.phoneNumber || ""}
+                  placeholder="Phone Number"
+                  value={formatPhoneNumber(cart.phoneNumber) || ""}
                   onChange={(e) =>
                     setCart((prev) => ({
                       ...prev,
@@ -468,7 +428,9 @@ const Cart = () => {
         </div>
       );
     }
-  } catch (error) {}
+  } catch (error) {
+    console.log(error);
+  }
 
   return (
     <div className="flex justify-center pt-10 text-xl">

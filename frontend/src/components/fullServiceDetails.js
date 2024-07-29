@@ -15,7 +15,8 @@ import PopupContext from "../context/PopupContext";
 
 const FullServiceDetails = ({ tempService }) => {
   const imageDirectory = "https://ramsaysdetailing.ca:4000/images/";
-  const { setIsOpen, setServiceToDelete } = useContext(PopupContext);
+  const { setDeleteServicePopupOpen, setServiceToDelete } =
+    useContext(PopupContext);
   const navigate = useNavigate();
   const [service, setService] = useState(
     tempService?.localImageName
@@ -301,7 +302,7 @@ const FullServiceDetails = ({ tempService }) => {
             onClick={() => {
               if (tempService?._id) {
                 setServiceToDelete(service);
-                setIsOpen(true);
+                setDeleteServicePopupOpen(true);
               } else {
                 setService({
                   newService: true,
@@ -1045,7 +1046,7 @@ const FullServiceDetails = ({ tempService }) => {
                 onClick={() => {
                   if (tempService?._id) {
                     setServiceToDelete(service);
-                    setIsOpen(true);
+                    setDeleteServicePopupOpen(true);
                   } else {
                     setService({
                       newService: true,

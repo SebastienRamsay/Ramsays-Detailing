@@ -1,6 +1,7 @@
 import axios from "axios";
 import { DateTime } from "luxon";
-import { useCallback, useContext, useState } from "react";
+import { useCallback, useContext, useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import AuthContext from "../context/AuthContext";
@@ -8,8 +9,14 @@ import ServicesContext from "../context/ServicesContext";
 import toast from "react-hot-toast";
 
 const EmployeeInfo = () => {
-  const { getLoggedIn, adminInfo, requestUpdateEmployeeInfo } =
-    useContext(AuthContext);
+  const navigate = useNavigate();
+  const {
+    getLoggedIn,
+    adminInfo,
+    requestUpdateEmployeeInfo,
+    deleteStripeAccount,
+    connectStripeAccount,
+  } = useContext(AuthContext);
   const { services } = useContext(ServicesContext);
   const [availableServices, setAvailableServices] = useState(
     adminInfo.availableServices || []
@@ -92,6 +99,27 @@ const EmployeeInfo = () => {
         defaultEndTime,
     },
   });
+  const hasRunRef = useRef(false);
+
+  useEffect(() => {
+    if (hasRunRef.current) return;
+
+    const query = new URLSearchParams(window.location.search);
+
+    if (query.get("success")) {
+      async function stripeStuff() {
+        await connectStripeAccount();
+        await getLoggedIn();
+        setTimeout(() => {
+          // Navigate to /bookings after 2 seconds
+          navigate("/employee");
+        }, 2000); // 2000 milliseconds = 2 seconds
+      }
+      stripeStuff();
+      toast.success("Stripe Account Connected");
+    }
+    hasRunRef.current = true;
+  }, [getLoggedIn, connectStripeAccount, navigate]);
 
   const resetVacationTime = async () => {
     setVacationTime({
@@ -756,6 +784,64 @@ const EmployeeInfo = () => {
         </div>
 
         {scheduleError}
+      </div>
+
+      <div className="mx-auto flex flex-col items-center justify-center rounded-3xl bg-primary-0 px-5 py-5 text-center shadow-2xl">
+        <h3 className="mb-3 flex justify-center text-3xl">
+          <b>Stripe Account</b>
+        </h3>
+        <div>
+          <h4 className="text-2xl font-bold">Account Status: </h4>
+          {adminInfo.stripeId === undefined ? (
+            <>
+              <h4 className="text-red-600">No Account</h4>
+              <br />
+              <button
+                onClick={async (e) => {
+                  e.preventDefault();
+                  const url = await connectStripeAccount();
+                  if (url) {
+                    window.location.href = url;
+                  }
+                }}
+                className="button mt-5 bg-green-600 text-white hover:bg-green-800 sm:mt-0"
+              >
+                Connect Stripe Account
+              </button>
+            </>
+          ) : adminInfo.onboardingComplete ? (
+            <>
+              <h4 className="text-green-600">Account Connected</h4>
+              <br />
+              <button
+                onClick={async (e) => {
+                  await deleteStripeAccount();
+                  await getLoggedIn();
+                }}
+                className="button mt-5 bg-red-600 text-white hover:bg-red-800 sm:mt-0"
+              >
+                Delete Stripe Account
+              </button>
+            </>
+          ) : (
+            <>
+              <h4 className="text-blue-600">Waiting for user information...</h4>
+              <br />
+              <button
+                onClick={async (e) => {
+                  e.preventDefault();
+                  const url = await connectStripeAccount();
+                  if (url) {
+                    window.location.href = url;
+                  }
+                }}
+                className="button mt-5 bg-green-600 text-white hover:bg-green-800 sm:mt-0"
+              >
+                Connect Stripe Account
+              </button>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

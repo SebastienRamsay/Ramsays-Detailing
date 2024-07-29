@@ -21,6 +21,7 @@ const session = require("express-session");
 const fs = require("node:fs");
 const https = require("https");
 const { requireAuth } = require("./middleware/requireAuth");
+const bodyParser = require("body-parser");
 
 // express app
 const app = express();
@@ -33,13 +34,13 @@ app.use((req, res, next) => {
   }
 });
 
-// const privateKey = fs.readFileSync("../../../../../../ssl/private.key.pem");
-// const certificate = fs.readFileSync("../../../../../../ssl/domain.cert.pem");
-// const ca = fs.readFileSync("../../../../../../ssl/intermediate.cert.pem");
+const privateKey = fs.readFileSync("../../../../../../ssl/private.key.pem");
+const certificate = fs.readFileSync("../../../../../../ssl/domain.cert.pem");
+const ca = fs.readFileSync("../../../../../../ssl/intermediate.cert.pem");
 
-const privateKey = fs.readFileSync("../../ssl/private.key.pem");
-const certificate = fs.readFileSync("../../ssl/domain.cert.pem");
-const ca = fs.readFileSync("../../ssl/intermediate.cert.pem");
+// const privateKey = fs.readFileSync("../../ssl/private.key.pem");
+// const certificate = fs.readFileSync("../../ssl/domain.cert.pem");
+// const ca = fs.readFileSync("../../ssl/intermediate.cert.pem");
 
 const credentials = { key: privateKey, cert: certificate, ca: ca };
 
@@ -53,7 +54,13 @@ app.use(
     credentials: true,
   })
 );
-
+app.use(
+  bodyParser.json({
+    verify: function (req, res, buf) {
+      req.rawBody = buf;
+    },
+  })
+);
 app.use(express.json());
 app.use(cookieParser());
 
@@ -92,13 +99,13 @@ app.use("/api/cart", cartRoutes);
 app.use(googlePlacesAPI);
 app.use(calendarRoute);
 app.use("/upload", uploadRoutes);
-app.use("/stripe", stripeRoutes);
-
+app.use("/api/stripe", stripeRoutes);
+console.log("Connecting MongoDB");
 // connect to db
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
-    console.log("connected to database");
+    console.log("Connected to MongoDB");
     // listen to port
     https2Server.listen(process.env.PORT, () => {
       console.log("Server running on HTTPS port", process.env.PORT);

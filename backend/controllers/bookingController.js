@@ -15,30 +15,7 @@ const {
 } = require("date-fns");
 const { getCoordinatesFromAddress } = require("../utils/locationCache");
 const maxUnClaimedBookings = 1;
-
-const getAllBookingInfo = async (req, res) => {
-  try {
-    const token = req.cookies.token;
-    const decodedToken = jwt.verify(token, process.env.SECRET);
-    const userID = decodedToken.userID;
-
-    const user = await User.findOne({ _id: userID });
-
-    const adminToken = req.cookies.admin;
-    const decodedAdminToken = jwt.verify(adminToken, process.env.SECRET);
-    const isAdmin = decodedAdminToken.isAdmin;
-
-    if (!isAdmin) {
-      return res.status(400).send("Not An Admin");
-    }
-
-    const bookings = await Booking.find();
-
-    return res.status(200).json({ bookings });
-  } catch (error) {
-    return res.status(400).json({ error: error.message });
-  }
-};
+const maxUnPaidBookings = 1;
 
 function degreesToRadians(degrees) {
   return degrees * (Math.PI / 180);
@@ -67,7 +44,9 @@ function calculateDistance(coord1, coord2) {
 function isDateTimeInRange(dateTimeToCheck, rangeStart, rangeEnd) {
   return dateTimeToCheck >= rangeStart && dateTimeToCheck <= rangeEnd;
 }
-
+function isDateTimeRangeWithinAnother(start1, end1, start2, end2) {
+  return start1 >= start2 && end1 <= end2;
+}
 function isTimeInRange(timeToCheck, rangeStart, rangeEnd) {
   if (!(timeToCheck instanceof DateTime)) {
     throw new TypeError("timeToCheck must be a Date object");
@@ -108,18 +87,24 @@ function isTimeInRange(timeToCheck, rangeStart, rangeEnd) {
   return timeCheck >= startTime && timeCheck <= endTime;
 }
 
-const busyEvents = async (req, res) => {
+async function getBusyEvents(req) {
   try {
     const token = req.cookies.token;
 
     if (!token) {
-      res.status(400).send("Not Logged In");
+      return {
+        complete: false,
+        message: "Not Logged In",
+      };
     }
     const user_id = jwt.verify(token, process.env.SECRET).userID; //auth complete
 
     const { customerLocation, expectedTimeToComplete, serviceNames } = req.body;
     if (!serviceNames || serviceNames.length === 0) {
-      return res.send("No Service NAmes Provided");
+      return {
+        complete: false,
+        message: "No Service Names Provided",
+      };
     }
     const customerCoords = await getCoordinatesFromAddress(customerLocation);
     var validEmployees = [];
@@ -127,9 +112,9 @@ const busyEvents = async (req, res) => {
       services: { $in: serviceNames },
       isEmployee: true,
     });
-    console.log("employees before distance calc: ", employees);
+    // console.log("employees before distance calc: ", employees);
     await Promise.all(
-      // check distance between all admin and location variable within the admins set range
+      // check distance between all employee's and the customers location
       employees.map(async (employee) => {
         const decodedEmployeeCoords = jwt.verify(
           employee.coords,
@@ -139,69 +124,75 @@ const busyEvents = async (req, res) => {
           longitude: decodedEmployeeCoords.lon,
           latitude: decodedEmployeeCoords.lat,
         };
-        console.log(employeeCoords);
+        // console.log(employeeCoords);
         const distance = await calculateDistance(
           employeeCoords,
           customerCoords
         );
         if (distance <= employee.distance) {
+          // within the employees set range
           console.log("VALID EMPLOYEE");
           validEmployees.push(employee);
         }
       })
     );
-    console.log("employees after distance calc: ", validEmployees);
+    // console.log("employees after distance calc: ", validEmployees);
     if (validEmployees.length === 0) {
-      return res.send("There are no employees in your area.");
+      return {
+        complete: false,
+        message: "There are no employees in your area.",
+      };
     }
+
     // Create a DateTime object for the current date and time
     const now = DateTime.local();
-
     // Calculate the next 15-minute increment
     const next15Minutes = Math.ceil(now.minute / 15) * 15;
-
     // Set the time to the next 15-minute increment and reset seconds and milliseconds
     let roundedTime = now.set({
       minute: next15Minutes,
       second: 0,
       millisecond: 0,
     });
-
     // If the next 15-minute increment goes into the next hour, increment the hour and reset the minutes
     if (next15Minutes >= 60) {
       roundedTime = roundedTime.plus({ hours: 1, minutes: -60 });
     }
-
     const startDate = roundedTime;
-
     // Calculate the end date as two months later
-    const endDate = startDate.plus({ months: 1 });
-
+    const endDate = startDate.plus({ months: 2 });
     // Set the range end time to 8 PM
     var rangeEnd = startDate.set({ hour: 20, minute: 0 });
-
     const timeIncrement = Duration.fromObject({ minutes: 15 });
     let currentTime = startDate;
-
     let oldTime = currentTime;
     let busyTimeOpen = false;
     const busyTimes = [];
     var busyStartTime;
     var busyEndTime;
 
-    // Make a single request to retrieve all bookings
-    const allBookings = await Booking.find();
+    // Find all bookings within the next 2 months
+    const allBookings = await Booking.find({
+      date: {
+        $gte: startDate,
+        $lte: endDate,
+      },
+    });
     console.log(allBookings);
     // Use Array.filter() to sort them into unClaimedBookings and claimedBookings
     const unClaimedBookings = allBookings.filter(
-      (booking) => booking.employeeId === "none"
+      (booking) =>
+        booking.employeeId === "none" && booking.status === "Un-Claimed"
     );
-    console.log(unClaimedBookings);
+
     // calculate busyTimes for all remaining employees
     while (currentTime < endDate) {
+      // 15 inc for 2 months
       if (currentTime > rangeEnd) {
+        // 8pm every day
         if (busyTimeOpen) {
-          console.log("busyTime End: ", oldTime.toISO());
+          // end any open busy times
+          // console.log("busyTime End: ", oldTime.toISO());
           busyEndTime = oldTime;
           busyTimes.push({
             start: busyStartTime.toISO(),
@@ -281,7 +272,7 @@ const busyEvents = async (req, res) => {
               ))
           ) {
             employeeAvalible = false;
-            console.log("schedule");
+            // console.log("schedule");
           }
 
           if (employeeAvalible) {
@@ -289,10 +280,10 @@ const busyEvents = async (req, res) => {
               const date = new Date(booking._doc.date);
               const bookingDate = DateTime.fromJSDate(date);
               const rangeStart = bookingDate.minus({
-                hours: expectedTimeToComplete,
+                hours: expectedTimeToComplete + 1,
               });
               const rangeEnd = bookingDate.plus({
-                hours: booking._doc.expectedTimeToComplete,
+                hours: booking._doc.expectedTimeToComplete + 1,
               });
               if (isDateTimeInRange(currentTime, rangeStart, rangeEnd)) {
                 employeeAvalible = false;
@@ -316,10 +307,10 @@ const busyEvents = async (req, res) => {
                 const date = new Date(booking._doc.date);
                 const bookingDate = DateTime.fromJSDate(date);
                 const rangeStart = bookingDate.minus({
-                  hours: expectedTimeToComplete,
+                  hours: expectedTimeToComplete + 1,
                 });
                 const rangeEnd = bookingDate.plus({
-                  hours: booking._doc.expectedTimeToComplete,
+                  hours: booking._doc.expectedTimeToComplete + 1,
                 });
                 unClaimedBookings[i] = {
                   ...booking,
@@ -328,7 +319,7 @@ const busyEvents = async (req, res) => {
                 };
                 if (isDateTimeInRange(currentTime, rangeStart, rangeEnd)) {
                   employeeAvalible = false;
-                  console.log("employee busy");
+                  // console.log("employee busy");
                   break; // Exit the loop
                 }
               }
@@ -343,13 +334,13 @@ const busyEvents = async (req, res) => {
 
       if (numberOfEmployeesUnavalible >= validEmployees.length) {
         if (!busyTimeOpen) {
-          console.log("busyTime Start: ", currentTime.toISO());
+          // console.log("busyTime Start: ", currentTime.toISO());
           busyStartTime = currentTime;
           busyTimeOpen = true;
         }
       } else {
         if (busyTimeOpen) {
-          console.log("busyTime End: ", oldTime.toISO());
+          // console.log("busyTime End: ", oldTime.toISO());
           busyEndTime = oldTime;
           busyTimes.push({
             start: busyStartTime.toISO(),
@@ -364,65 +355,31 @@ const busyEvents = async (req, res) => {
       numberOfEmployeesUnavalible = 0;
     }
     // calculations complete
-    console.log(busyTimes);
-    return res.json(busyTimes);
+    // console.log(busyTimes);
+    return { complete: true, busyTimes: busyTimes };
   } catch (error) {
     console.log("Error getting busy events: ", error);
+    return { complete: false, message: "Error getting busy events: " + error };
   }
-};
+}
 
-const getEmployeeBookings = async (req, res) => {
-  try {
-    const token = req.cookies.token;
-
-    if (!token) {
-      res.status(400).send("Not Logged In");
-    }
-    const user_id = jwt.verify(token, process.env.SECRET).userID;
-    const bookings = await Booking.find({
-      possibleemployeeIds: { $in: [user_id] },
-      employeeId: "none",
-    }).sort({
-      createdAt: -1,
-    });
-
-    const claimedBookings = await Booking.find({
-      employeeId: user_id,
-    }).sort({
-      createdAt: -1,
-    });
-
-    res.status(200).json({ bookings, claimedBookings });
-  } catch (error) {
-    return res.status(400).send(error);
-  }
-};
-
-const getUserBookings = async (req, res) => {
-  try {
-    const token = req.cookies.token;
-
-    if (!token) {
-      res.status(400).send("Not Logged In");
-    }
-    const user_id = jwt.verify(token, process.env.SECRET).userID;
-    const bookings = await Booking.find({ userId: user_id }).sort({
-      createdAt: -1,
-    });
-
-    return res.status(200).json(bookings);
-  } catch (error) {
-    return res.status(400).send(error);
+const busyEvents = async (req, res) => {
+  const response = await getBusyEvents(req);
+  if (response.complete) {
+    return res.status(200).send(response.busyTimes);
+  } else {
+    return res.status(400).send(response.message);
   }
 };
 
 const preCreateBooking = async (req, res) => {
   var unClaimedBookings = 0;
+  var numberOfUnPaidBookings = 0;
   try {
     const token = req.cookies.token;
 
     if (!token) {
-      res.status(400).send("Not Logged In");
+      return res.status(400).send("Not Logged In");
     }
     const user_id = jwt.verify(token, process.env.SECRET).userID;
 
@@ -433,48 +390,79 @@ const preCreateBooking = async (req, res) => {
 
     const pastBookings = await Booking.find({ userId: user_id });
     pastBookings.map((booking) => {
-      if (booking.employeeId === "none") {
+      if (booking.employeeId === "none" && booking.status === "Un-Claimed") {
         unClaimedBookings++;
       }
+      if (booking.status === "Un-Paid") {
+        numberOfUnPaidBookings++;
+      }
+      return booking;
     });
     if (unClaimedBookings >= maxUnClaimedBookings) {
       return res.status(400).send("Too many unclaimed bookings.");
     }
+    if (numberOfUnPaidBookings >= maxUnPaidBookings) {
+      return res
+        .status(400)
+        .send(
+          "Too Many Un-Paid Bookings. Please retry payment or cancel the un-paid booking."
+        );
+    }
     const { cart } = req.body;
-    console.log("cart Address: ", cart.address);
+    let timeToComplete = 0; // calculate time to complete
+    cart.services.forEach((service) => {
+      timeToComplete += service.timeToComplete;
+    });
+
+    req.body.customerLocation = cart.address;
+    req.body.expectedTimeToComplete = timeToComplete;
+    req.body.serviceNames = cart.services.map((service) => service.title);
+
+    const busyTimesReponse = await getBusyEvents(req);
+    if (!busyTimesReponse.complete) {
+      return res
+        .status(400)
+        .send("busyTimes Error: " + busyTimesReponse.message);
+    }
+    const busyTimes = busyTimesReponse.busyTimes;
+    console.log("CREATE BOOKING BUSYTIMES: " + busyTimes);
+    const jsDate = new Date(cart.selectedDateTime);
+    const start = DateTime.fromJSDate(jsDate).toISO();
+    const end = DateTime.fromJSDate(jsDate)
+      .plus({ hours: timeToComplete })
+      .toISO();
+    busyTimes.map((time) => {
+      if (isDateTimeRangeWithinAnother(start, end, time.start, time.end)) {
+        res.status(400).send("Please select a differnt time");
+      }
+    });
+
     const customerCoords = await getCoordinatesFromAddress(cart.address);
-    let answeredQuestions = "";
-    let summary = "";
-    let description = "";
-    let price = 0;
-    let serviceTitles = [];
     var validEmployees = [];
 
+    const serviceNames = cart.services.map((service) => service.title);
+
     // MAKING EVENT DATA
-    const serviceName = cart.services[0].title;
-    console.log(serviceName);
-
-    var employees = await User.find({
-      services: { $in: [serviceName] },
+    const employees = await User.find({
       isEmployee: true,
-    }); // get all employees
-    console.log("employees before distance calc: ", employees);
-
+      onboardingComplete: true,
+      services: { $all: serviceNames },
+    });
+    console.log(serviceNames);
+    console.log(employees);
     // check distance between all employees location and customerCoords variable within the employee set range
     const promises = employees.map(async (employee) => {
       const employeeLocation = jwt.verify(
         employee.location,
         process.env.SECRET
       ).location;
-      console.log(JSON.stringify(employeeLocation));
+      // console.log(JSON.stringify(employeeLocation));
       const employeeCoords = await getCoordinatesFromAddress(employeeLocation);
       const distance = await calculateDistance(employeeCoords, customerCoords);
-      console.log("employee Location: ", employeeLocation);
-      console.log("customer Coords: ", customerCoords);
       if (distance <= employee.distance) {
         validEmployees.push(employee);
         console.log(distance, " <= ", employee.distance);
-        console.log("VALID EMPLOYEE");
+        console.log("VALID EMPLOYEE: " + employee);
       } else {
         console.log(distance, " >= ", employee.distance);
         console.log("INVALID EMPLOYEE");
@@ -482,15 +470,8 @@ const preCreateBooking = async (req, res) => {
     });
 
     await Promise.all(promises);
-    console.log("validEmployees: ", validEmployees);
-
-    var possibleEmployeeIds = [];
-    validEmployees.map((employee) => {
-      possibleEmployeeIds.push(employee._id);
-    });
-
-    console.log("possibleEmployeeIds: ", possibleEmployeeIds);
-    if (!possibleEmployeeIds | (possibleEmployeeIds.length <= 0)) {
+    console.log(validEmployees);
+    if (!validEmployees | (validEmployees.length <= 0)) {
       return res.status(400).send("No available employees in you area.");
     }
     return res.status(200).send("Pre-Booking Successful.");
@@ -506,13 +487,13 @@ const createBooking = async (req, res) => {
     const token = req.cookies.token;
 
     if (!token) {
-      res.status(400).send("Not Logged In");
+      return { created: false, message: "Not Logged In" };
     }
     const user_id = jwt.verify(token, process.env.SECRET).userID;
 
     const user = await User.findById(user_id);
     if (user.isEmployee) {
-      return res.status(400).send("employees can't create bookings");
+      return { created: false, message: "employees can't create bookings" };
     }
 
     const pastBookings = await Booking.find({ userId: user_id });
@@ -522,9 +503,19 @@ const createBooking = async (req, res) => {
       }
     });
     if (unClaimedBookings >= maxUnClaimedBookings) {
-      return res.status(400).send("too many unclaimed bookings");
+      try {
+        const adminToken = req.cookies.admin;
+        const decodedAdminToken = jwt.verify(adminToken, process.env.SECRET);
+        const isAdmin = decodedAdminToken.isAdmin;
+
+        if (!isAdmin) {
+          return { created: false, message: "too many unclaimed bookings" };
+        }
+      } catch (error) {
+        return { created: false, message: "too many unclaimed bookings" };
+      }
     }
-    const { cart, selectedDateTime } = req.body;
+    const { cart } = req.body;
     const customerCoords = await getCoordinatesFromAddress(cart.address);
     let answeredQuestions = "";
     let summary = "";
@@ -534,13 +525,12 @@ const createBooking = async (req, res) => {
     var validEmployees = [];
 
     // MAKING EVENT DATA
-    const serviceName = cart.services[0].title;
-    console.log(serviceName);
+    const serviceNames = cart.services.map((service) => service.title);
 
-    var employees = await User.find({
-      services: { $in: [serviceName] },
+    const employees = await User.find({
+      services: { $all: serviceNames },
       isEmployee: true,
-    }); // get all employees
+    }); // get employees with all serviceNames
     console.log("employees before distance calc: ", employees);
 
     // check distance between all employees location and customerCoords variable within the employee set range
@@ -602,14 +592,13 @@ const createBooking = async (req, res) => {
     // // CHECK IF EMPLOYEES ARE BUSY
     // busyEvents.map((busyEvent) => {
     //   if (isDateTimeInRange(selectedDateTime, busyEvent.start, busyEvent.end)) {
-    //     res.status(400).send("ERROR! EMPLOYEE BUSY");
+    //     return res.status(400).send("ERROR! EMPLOYEE BUSY");
     //   }
     // });
 
     try {
-      const jsDate = new Date(selectedDateTime);
+      const jsDate = new Date(cart.selectedDateTime);
       const date = DateTime.fromJSDate(jsDate).toISO();
-      console.log("selectedDateTime", date);
       const user = await User.findOne({ _id: user_id });
 
       const newBooking = new Booking({
@@ -630,15 +619,126 @@ const createBooking = async (req, res) => {
         userEventId: "none",
         employeeEventId: "none",
         employeeId: "none",
+        status: "Un-Paid",
       });
       newBooking.save();
-      res.status(200).json(newBooking);
       console.log("Booking added to database: ", newBooking);
+      return { created: true, newBooking };
     } catch (error) {
       console.log("Error adding booking to database: ", error);
     }
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    console.log("Error creating booking: ", error.message);
+    return { created: false, message: error.message };
+  }
+};
+
+const getAdminBookings = async (req, res) => {
+  try {
+    const token = req.cookies.token;
+    const decodedToken = jwt.verify(token, process.env.SECRET);
+    const userID = decodedToken.userID;
+
+    const user = await User.findOne({ _id: userID });
+
+    const adminToken = req.cookies.admin;
+    const decodedAdminToken = jwt.verify(adminToken, process.env.SECRET);
+    const isAdmin = decodedAdminToken.isAdmin;
+
+    if (!isAdmin) {
+      return res.status(400).send("Not An Admin");
+    }
+
+    const bookings = await Booking.find();
+
+    const confirmedBookings = bookings.filter(
+      (booking) => booking.status === "Confirmed"
+    );
+    const completeBookings = bookings.filter(
+      (booking) => booking.status === "Complete"
+    );
+    const claimedBookings = bookings.filter(
+      (booking) =>
+        booking.employeeId !== "none" &&
+        booking.status !== "Complete" &&
+        booking.status !== "Confirmed"
+    );
+    const unClaimedBookings = bookings.filter(
+      (booking) => booking.employeeId === "none"
+    );
+
+    return res.status(200).json({
+      unClaimedBookings,
+      claimedBookings,
+      completeBookings,
+      confirmedBookings,
+    });
+  } catch (error) {
+    return res.status(400).json({ error: error.message });
+  }
+};
+
+const getEmployeeBookings = async (req, res) => {
+  try {
+    const token = req.cookies.token;
+
+    if (!token) {
+      return res.status(400).send("Not Logged In");
+    }
+    const user_id = jwt.verify(token, process.env.SECRET).userID;
+    const bookings = await Booking.find({
+      possibleemployeeIds: { $in: [user_id] },
+    }).sort({
+      createdAt: -1,
+    });
+
+    const unClaimedBookings = bookings.filter(
+      (booking) =>
+        booking.employeeId === "none" &&
+        booking.status === "Un-Claimed" &&
+        booking.payment_intent
+    );
+    const confirmedBookings = bookings.filter(
+      (booking) =>
+        booking.status === "Confirmed" && booking.employeeId === user_id
+    );
+    const completeBookings = bookings.filter(
+      (booking) =>
+        booking.status === "Complete" && booking.employeeId === user_id
+    );
+    const claimedBookings = bookings.filter(
+      (booking) =>
+        booking.employeeId === user_id &&
+        booking.status !== "Complete" &&
+        booking.status !== "Confirmed"
+    );
+    console.log(unClaimedBookings);
+    return res.status(200).json({
+      unClaimedBookings,
+      confirmedBookings,
+      claimedBookings,
+      completeBookings,
+    });
+  } catch (error) {
+    return res.status(400).send(error);
+  }
+};
+
+const getUserBookings = async (req, res) => {
+  try {
+    const token = req.cookies.token;
+
+    if (!token) {
+      return res.status(400).send("Not Logged In");
+    }
+    const user_id = jwt.verify(token, process.env.SECRET).userID;
+    const bookings = await Booking.find({ userId: user_id }).sort({
+      createdAt: -1,
+    });
+
+    return res.status(200).json(bookings);
+  } catch (error) {
+    return res.status(400).send(error);
   }
 };
 
@@ -647,7 +747,7 @@ const setUserEventID = async (req, res) => {
     const token = req.cookies.token;
 
     if (!token) {
-      res.status(400).send("Not Logged In");
+      return res.status(400).send("Not Logged In");
     }
     const user_id = jwt.verify(token, process.env.SECRET).userID;
     const { userEventId, bookingId } = req.body;
@@ -665,7 +765,7 @@ const setEmployeeEventID = async (req, res) => {
     const token = req.cookies.token;
 
     if (!token) {
-      res.status(400).send("Not Logged In");
+      return res.status(400).send("Not Logged In");
     }
     const user_id = jwt.verify(token, process.env.SECRET).userID;
 
@@ -689,13 +789,23 @@ const claimBooking = async (req, res) => {
     const token = req.cookies.token;
 
     if (!token) {
-      res.status(400).send("Not Logged In");
+      return res.status(400).send("Not Logged In");
     }
     const user_id = jwt.verify(token, process.env.SECRET).userID;
 
     const user = await User.findOne({ _id: user_id });
-    if (user.isEmployee === false) {
-      return res.status(400).send("User is not an employee");
+    if (!user.isEmployee) {
+      try {
+        const adminToken = req.cookies.admin;
+        const decodedAdminToken = jwt.verify(adminToken, process.env.SECRET);
+        isAdmin = decodedAdminToken.isAdmin;
+
+        if (!isAdmin) {
+          return res.status(400).send("Not An Admin");
+        }
+      } catch (error) {
+        return res.status(400).send("User is not an employee");
+      }
     }
     const { bookingId } = req.body;
     const booking = await Booking.findOne({ _id: bookingId });
@@ -710,6 +820,7 @@ const claimBooking = async (req, res) => {
     user.claimedBookings.push(booking);
     user.save();
     booking.employeeId = user_id;
+    booking.status = "Claimed";
     booking.save();
     return res.send(user_id);
   } catch (error) {
@@ -721,19 +832,30 @@ const claimBooking = async (req, res) => {
 const unClaimBooking = async (req, res) => {
   try {
     const token = req.cookies.token;
-
+    var isAdmin;
     if (!token) {
-      res.status(400).send("Not Logged In");
+      return res.status(400).send("Not Logged In");
     }
     const user_id = jwt.verify(token, process.env.SECRET).userID;
 
     const user = await User.findOne({ _id: user_id });
+
     if (user.isEmployee === false) {
-      return res.status(400).send("User is not an employee");
+      try {
+        const adminToken = req.cookies.admin;
+        const decodedAdminToken = jwt.verify(adminToken, process.env.SECRET);
+        isAdmin = decodedAdminToken.isAdmin;
+
+        if (!isAdmin) {
+          return res.status(400).send("Not An Admin");
+        }
+      } catch (error) {
+        return res.status(400).send("User is not an employee");
+      }
     }
     const { bookingId } = req.body;
     const booking = await Booking.findOne({ _id: bookingId });
-    if (booking.employeeId !== user_id) {
+    if (booking.employeeId !== user_id && !isAdmin) {
       return res.status(400).send("This booking was not claimed by you");
     }
     user.claimedBookings &&
@@ -743,6 +865,7 @@ const unClaimBooking = async (req, res) => {
 
     user.save();
     booking.employeeId = "none";
+    booking.status = "Un-Claimed";
     booking.save();
     return res.send(user_id);
   } catch (error) {
@@ -751,53 +874,183 @@ const unClaimBooking = async (req, res) => {
   }
 };
 
+const markBookingPaid = async (req, res) => {
+  try {
+    const { bookingId, payment_intent } = req.body;
+    console.log(payment_intent, bookingId);
+    const booking = await Booking.findOne({ _id: bookingId });
+    const encoded_payment_intent = jwt.sign(payment_intent, process.env.SECRET);
+    booking.payment_intent = encoded_payment_intent;
+    booking.status = "Un-Claimed";
+    booking.save();
+    return { complete: true };
+  } catch (error) {
+    console.log(error);
+    return { complete: false, message: "Error Marking Booking Paid" };
+  }
+};
+
+const markBookingComplete = async (req, res) => {
+  try {
+    const { bookingId } = req.body;
+    const booking = await Booking.findOne({ _id: bookingId });
+    booking.status = "Complete";
+    booking.save();
+    return res.status(200).send("Booking Marked Complete");
+  } catch (error) {
+    console.log(error);
+    return res.status(400).send("Error Marking Booking Complete");
+  }
+};
+
 const deleteBooking = async (req, res) => {
   try {
     const token = req.cookies.token;
 
     if (!token) {
-      res.status(400).send("Not Logged In");
+      return { complete: false, message: "Not Logged In" };
     }
-    const user_id = jwt.verify(token, process.env.SECRET).userID;
+    const userId = jwt.verify(token, process.env.SECRET).userID;
 
-    const { bookingId, userId, employeeId } = req.body;
+    const { _id } = req.body;
 
     const user = await User.findById(userId);
+    const booking = await Booking.findById(_id);
+
+    if (booking.userId !== userId) {
+      try {
+        const adminToken = req.cookies.admin;
+        const decodedAdminToken = jwt.verify(adminToken, process.env.SECRET);
+        isAdmin = decodedAdminToken.isAdmin;
+
+        if (!isAdmin) {
+          return { complete: false, message: "Not An Admin" };
+        }
+      } catch (error) {
+        return { complete: false, message: "You don't' own this booking" };
+      }
+    }
 
     user.bookings &&
       user?.bookings.filter((b) => {
-        b._id !== bookingId;
+        b._id !== _id;
       });
     user.save();
 
-    if (employeeId & (employeeId !== "none")) {
-      const employee = await User.findById(employeeId);
+    if (booking.employeeId & (booking.employeeId !== "none")) {
+      const employee = await User.findById(booking.employeeId);
 
       employee?.claimedBookings?.filter((b) => {
-        b._id !== bookingId;
+        b._id !== _id;
       });
       employee.save();
     }
 
-    await Booking.findByIdAndDelete(bookingId);
+    await Booking.findByIdAndDelete(_id);
 
-    return res.status(200).send("booking deleted");
+    return { complete: true };
   } catch (error) {
     console.log(error);
-    return res.status(400);
+    return { complete: false, message: error };
   }
 };
 
+const reScheduleBooking = async (req, res) => {
+  try {
+    const token = req.cookies.token;
+    const { bookingId, dateTime } = req.body;
+    if (!token) {
+      return { complete: false, message: "Not Logged In" };
+    }
+    const userId = jwt.verify(token, process.env.SECRET).userID;
+    const user = User.findById(userId);
+    const booking = Booking.findById(bookingId);
+
+    if (user._id !== booking.userId) {
+      return res.status(400).send("You don't own this booking");
+    }
+
+    req.body.customerLocation = booking.location;
+    req.body.expectedTimeToComplete = booking.expectedTimeToComplete;
+    req.body.serviceNames = booking.cart.services.map(
+      (service) => service.title
+    );
+
+    const busyTimes = getBusyEvents(req, res);
+    const jsDate = new Date(dateTime);
+    const date = DateTime.fromJSDate(jsDate).toISO();
+    const end = DateTime.fromJSDate(jsDate)
+      .plus({ hours: timeToComplete })
+      .toISO();
+    busyTimes.map((time) => {
+      if (isDateTimeRangeWithinAnother(date, end, time.start, time.end)) {
+        res.status(400).send("Please select a differnt time");
+      }
+    });
+
+    booking.date = date;
+
+    // Check if employee is busy during new dateTime
+    if (booking.employeeId) {
+      // if booking claimed
+      let hasOverlap = false;
+      const employeesClaimedBookings =
+        (await Booking.find({ employeeId: booking.employeeId })) || [];
+
+      employeesClaimedBookings.forEach((claimedBooking) => {
+        if (
+          doEventsOverlap(
+            dateTime,
+            booking.timeToComplete,
+            claimedBooking.date,
+            claimedBooking.timeToComplete
+          )
+        ) {
+          hasOverlap = true;
+        }
+        return claimedBooking;
+      });
+      if (hasOverlap) {
+        booking.employeeId = ""; //unclaim booking as current emplyee is busy on new day.
+      }
+    }
+    booking.save();
+    return res.status(200).send("Booking Re-Scheduled");
+  } catch (error) {
+    console.log(error);
+    return res.status(400).send(error);
+  }
+};
+
+// Function to check if two events overlap
+function doEventsOverlap(
+  event1StartDate,
+  event1TimeToComplete,
+  event2StartDate,
+  event2TimeToComplete
+) {
+  const event1End = event1StartDate.plus({ hours: event1TimeToComplete });
+  const event2End = event2StartDate.plus({ hours: event2TimeToComplete });
+
+  return (
+    (event1StartDate <= event2StartDate && event1End >= event2StartDate) ||
+    (event2StartDate <= event1StartDate && event2End >= event1StartDate)
+  );
+}
+
 module.exports = {
-  getAllBookingInfo,
+  getAdminBookings,
   deleteBooking,
   getEmployeeBookings,
   getUserBookings,
-  createBooking,
   preCreateBooking,
   setEmployeeEventID,
   setUserEventID,
   busyEvents,
   unClaimBooking,
   claimBooking,
+  markBookingPaid,
+  createBooking,
+  markBookingComplete,
+  reScheduleBooking,
 };

@@ -1,35 +1,39 @@
-import { createContext, useReducer, useEffect } from 'react'
+import React, { createContext, useEffect, useState } from "react"
 
-export const AuthContext = createContext()
+const AuthContext = createContext()
 
-export const authReducer = (state, action) => {
-  switch (action.type) {
-    case 'LOGIN': 
-      return { user: action.payload }
-    case 'LOGOUT':
-      return { user: null }
-    default:
-      return state
+function AuthContextProvider(props){
+  const [loggedIn, setLoggedIn] = useState(undefined)
+  const [cartLength, setCartLength] = useState(0)
+
+  async function getLoggedIn() { 
+    const loggedInRes = await fetch('https://ramsays-detailing.onrender.com/LoggedIn', {
+      method: 'GET',
+      credentials: 'include'
+    })
+    var data = await loggedInRes.json()
+    setLoggedIn(data)
   }
-}
 
-export const AuthContextProvider = ({ children }) => {
-  const [state, dispatch] = useReducer(authReducer, { 
-    user:null
-  })
+  async function getCartLength() { 
+    const cartResponse = await fetch('https://ramsays-detailing.onrender.com/api/cart', {
+      method: 'GET',
+      credentials: 'include'
+    })
+    var json = await cartResponse.json()
+    setCartLength(json.services.length)
+  }
 
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem('user'))
-    
-    if (user){
-      dispatch({type: 'LOGIN', payload: user})
-    }
+    getLoggedIn()
+    getCartLength()
   }, [])
-  console.log('AuthContext state: ', state)
-  
-  return (
-    <AuthContext.Provider value={{ ...state, dispatch }}>
-      { children }
-    </AuthContext.Provider>
-  )
+
+  return <AuthContext.Provider value={{loggedIn, getCartLength, cartLength, getLoggedIn}}>
+    {props.children}
+  </AuthContext.Provider>
 }
+
+export default AuthContext
+
+export { AuthContextProvider }
